@@ -1,19 +1,21 @@
 :root {
   color-scheme: light;
-  --bg: #f8fafc;
-  --ink: #202124;
-  --muted: #5f6368;
+  --bg: #f6f3ee;
+  --ink: #1b1c1f;
+  --muted: #62646a;
   --panel: #ffffff;
-  --line: #dadce0;
-  --soft: #f1f3f4;
+  --line: #dfd8cd;
+  --soft: #f4efe8;
   --blue: #1a73e8;
   --red: #ea4335;
   --yellow: #fbbc04;
   --green: #34a853;
+  --charcoal: #111317;
+  --paper: #fffaf2;
   --warn: #f29900;
   --danger: #d93025;
   --ok: #188038;
-  --shadow: 0 18px 45px rgba(60, 64, 67, 0.12);
+  --shadow: 0 24px 70px rgba(49, 39, 27, 0.14);
 }
 
 * {
@@ -23,7 +25,13 @@
 body {
   margin: 0;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg);
+  background:
+    linear-gradient(90deg, rgba(27, 28, 31, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(27, 28, 31, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 15% 8%, rgba(251, 188, 4, 0.18), transparent 28%),
+    radial-gradient(circle at 84% 18%, rgba(26, 115, 232, 0.16), transparent 24%),
+    var(--bg);
+  background-size: 44px 44px, 44px 44px, auto, auto, auto;
   color: var(--ink);
   line-height: 1.45;
 }
@@ -35,7 +43,7 @@ body {
 }
 
 .topbar {
-  height: 58px;
+  height: 64px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -47,6 +55,7 @@ body {
   align-items: center;
   gap: 10px;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 .brand-mark {
@@ -55,6 +64,7 @@ body {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 3px;
+  transform: rotate(-8deg);
 }
 
 .brand-mark i {
@@ -83,14 +93,17 @@ body {
 }
 
 .hero {
-  min-height: 330px;
+  min-height: 460px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 24px;
+  grid-template-columns: minmax(0, 1.05fr) minmax(330px, 0.95fr);
+  gap: 36px;
   align-items: center;
-  padding: 38px;
-  border: 1px solid var(--line);
-  background: #fff;
+  padding: clamp(28px, 5vw, 62px);
+  border: 1px solid rgba(27, 28, 31, 0.12);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 242, 0.96), rgba(255, 255, 255, 0.88)),
+    radial-gradient(circle at 92% 12%, rgba(52, 168, 83, 0.16), transparent 28%),
+    var(--paper);
   box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
@@ -104,17 +117,42 @@ body {
   background: linear-gradient(90deg, var(--blue) 0 25%, var(--red) 25% 50%, var(--yellow) 50% 75%, var(--green) 75% 100%);
 }
 
+.hero::after {
+  content: "";
+  position: absolute;
+  right: -120px;
+  bottom: -150px;
+  width: 420px;
+  height: 420px;
+  border: 1px solid rgba(26, 115, 232, 0.18);
+  transform: rotate(18deg);
+}
+
 .hero > * {
   position: relative;
 }
 
-.eyebrow {
-  margin: 0 0 12px;
-  color: var(--blue);
+.hero-copy {
+  max-width: 760px;
+}
+
+.folio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  color: var(--charcoal);
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   letter-spacing: 0;
+}
+
+.folio-label::before {
+  content: "";
+  width: 46px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--blue), var(--red), var(--yellow), var(--green));
 }
 
 h1,
@@ -126,9 +164,10 @@ p {
 
 h1 {
   max-width: 780px;
-  margin-bottom: 12px;
-  font-size: clamp(2.8rem, 7vw, 6.4rem);
-  line-height: 0.94;
+  margin-bottom: 18px;
+  font-size: clamp(3.2rem, 8vw, 7.8rem);
+  line-height: 0.88;
+  letter-spacing: -0.055em;
 }
 
 h2 {
@@ -143,22 +182,22 @@ h3 {
 .lede {
   max-width: 760px;
   color: var(--muted);
-  font-size: 1.18rem;
+  font-size: clamp(1.08rem, 2vw, 1.28rem);
   line-height: 1.55;
-  margin-bottom: 22px;
+  margin-bottom: 28px;
 }
 
 .scan-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 116px;
-  gap: 10px;
+  gap: 12px;
   max-width: 760px;
 }
 
 .scan-form input,
 .scan-form button {
-  height: 52px;
-  border: 1px solid var(--line);
+  height: 56px;
+  border: 1px solid rgba(27, 28, 31, 0.14);
   font: inherit;
 }
 
@@ -167,15 +206,21 @@ h3 {
   padding: 0 15px;
   color: var(--ink);
   background: #fff;
-  box-shadow: inset 0 0 0 1px transparent;
+  box-shadow: 0 12px 30px rgba(49, 39, 27, 0.08);
 }
 
 .scan-form button {
-  border-color: var(--blue);
-  background: var(--blue);
+  border-color: var(--charcoal);
+  background: var(--charcoal);
   color: #fff;
   font-weight: 800;
   cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.scan-form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(27, 28, 31, 0.18);
 }
 
 .scan-form button:disabled {
@@ -190,22 +235,51 @@ h3 {
   font-size: 0.93rem;
 }
 
+.hero-art {
+  min-height: 330px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.brush-stroke {
+  position: absolute;
+  width: min(100%, 520px);
+  transform: rotate(-8deg);
+  filter: drop-shadow(0 22px 24px rgba(26, 115, 232, 0.12));
+}
+
+.brush-stroke path:first-child {
+  fill: rgba(26, 115, 232, 0.16);
+}
+
+.brush-stroke path:nth-child(2) {
+  fill: none;
+  stroke: rgba(234, 67, 53, 0.36);
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
 .decision-card {
-  min-height: 210px;
-  border: 2px solid var(--yellow);
-  background: #fff;
+  width: min(310px, 100%);
+  min-height: 230px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(18px);
   display: grid;
   place-content: center;
   text-align: center;
   padding: 20px;
-  box-shadow: 0 12px 28px rgba(251, 188, 4, 0.18);
+  box-shadow: 0 28px 70px rgba(49, 39, 27, 0.18);
+  position: relative;
 }
 
 .decision-card span {
-  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-size: clamp(2.25rem, 4vw, 3.7rem);
   line-height: 1;
   font-weight: 800;
   color: var(--warn);
+  letter-spacing: -0.055em;
 }
 
 .decision-card small {
@@ -222,7 +296,7 @@ h3 {
 
 .decision-card.allow {
   border-color: var(--green);
-  box-shadow: 0 12px 28px rgba(52, 168, 83, 0.16);
+  box-shadow: 0 24px 58px rgba(52, 168, 83, 0.2);
 }
 
 .decision-card.block span {
@@ -231,7 +305,30 @@ h3 {
 
 .decision-card.block {
   border-color: var(--red);
-  box-shadow: 0 12px 28px rgba(234, 67, 53, 0.16);
+  box-shadow: 0 24px 58px rgba(234, 67, 53, 0.2);
+}
+
+.terminal-chip {
+  position: absolute;
+  left: 20px;
+  bottom: 26px;
+  display: grid;
+  gap: 3px;
+  width: min(260px, calc(100% - 32px));
+  padding: 13px 15px;
+  background: #111317;
+  color: #fff;
+  box-shadow: 0 16px 34px rgba(17, 19, 23, 0.24);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.82rem;
+}
+
+.terminal-chip span {
+  color: #9aa0a6;
+}
+
+.terminal-chip strong {
+  color: #fff;
 }
 
 .review-strip {
@@ -239,8 +336,8 @@ h3 {
   grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1.4fr) 140px;
   gap: 1px;
   margin-top: 18px;
-  border: 1px solid var(--line);
-  background: var(--line);
+  border: 1px solid rgba(27, 28, 31, 0.1);
+  background: rgba(27, 28, 31, 0.1);
 }
 
 .review-strip > div {
@@ -258,8 +355,11 @@ h3 {
   align-items: center;
   margin-top: 18px;
   padding: 24px;
-  border: 1px solid var(--line);
-  background: linear-gradient(90deg, #fff 0%, #f8fbff 100%);
+  border: 1px solid rgba(27, 28, 31, 0.1);
+  background:
+    linear-gradient(90deg, #fff 0%, #f8fbff 100%),
+    #fff;
+  box-shadow: 0 14px 34px rgba(49, 39, 27, 0.06);
 }
 
 .model-strip h2 {
@@ -281,8 +381,9 @@ h3 {
   align-items: center;
   margin-top: 18px;
   padding: 20px 24px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(27, 28, 31, 0.1);
   background: #fff;
+  box-shadow: 0 14px 34px rgba(49, 39, 27, 0.06);
 }
 
 .workflow-strip h2 {
@@ -314,14 +415,15 @@ h3 {
 .capability-panel,
 .panel {
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid rgba(27, 28, 31, 0.1);
   padding: 24px;
 }
 
 .verdict-panel {
-  border: 2px solid var(--blue);
-  box-shadow: 0 18px 42px rgba(26, 115, 232, 0.12);
+  border: 1px solid rgba(26, 115, 232, 0.34);
+  box-shadow: 0 24px 58px rgba(26, 115, 232, 0.14);
   position: relative;
+  overflow: hidden;
 }
 
 .verdict-panel::after {
@@ -329,12 +431,26 @@ h3 {
   position: absolute;
   top: 0;
   right: 0;
-  width: 104px;
-  height: 6px;
-  background: linear-gradient(90deg, var(--yellow), var(--green));
+  width: 150px;
+  height: 7px;
+  background: linear-gradient(90deg, var(--blue), var(--red), var(--yellow), var(--green));
+}
+
+.verdict-brush {
+  position: absolute;
+  right: -92px;
+  top: 20px;
+  width: 380px;
+  opacity: 0.18;
+  transform: rotate(-4deg);
+}
+
+.verdict-brush path {
+  fill: var(--blue);
 }
 
 .gemma-kicker {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -352,11 +468,14 @@ h3 {
 }
 
 .verdict-panel h2 {
+  position: relative;
   font-size: clamp(1.7rem, 3vw, 2.55rem);
   line-height: 1.05;
+  letter-spacing: -0.035em;
 }
 
 .verdict-panel > p {
+  position: relative;
   font-size: 1.08rem;
   color: var(--ink);
 }
@@ -371,6 +490,7 @@ h3 {
 }
 
 .action-grid {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
@@ -393,7 +513,7 @@ li {
 }
 
 .capability {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(27, 28, 31, 0.1);
   padding: 13px 14px;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -448,13 +568,14 @@ li {
 }
 
 .finding {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(27, 28, 31, 0.1);
   display: grid;
   grid-template-columns: 170px minmax(0, 0.9fr) minmax(260px, 1fr);
   gap: 14px;
   align-items: start;
   padding: 14px;
   background: #fff;
+  box-shadow: 0 8px 18px rgba(49, 39, 27, 0.04);
 }
 
 .finding-header {
@@ -485,8 +606,9 @@ li {
 
 code {
   overflow-wrap: anywhere;
-  background: #f2f4f7;
-  padding: 2px 4px;
+  background: #f6f0e8;
+  padding: 3px 5px;
+  color: #2f3136;
 }
 
 .safe-note {
@@ -517,10 +639,20 @@ code {
 
   .hero {
     padding: 26px;
+    min-height: auto;
   }
 
   .decision-card {
     min-height: 150px;
+  }
+
+  .hero-art {
+    min-height: 260px;
+  }
+
+  .terminal-chip {
+    left: 10px;
+    bottom: 10px;
   }
 
   .topbar {
