@@ -89,6 +89,18 @@ function render(report) {
   const capabilities = document.getElementById("capabilities");
   capabilities.innerHTML = "";
   const entries = Object.entries(report.category_counts || {}).sort((a, b) => b[1] - a[1]);
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "capability";
+    empty.innerHTML = `
+      <div>
+        <strong>No agent-tool signals</strong>
+        <small>No shell, browser, write, secret, or instruction signals were found in scanned files.</small>
+      </div>
+      <span class="capability-count">0</span>
+    `;
+    capabilities.appendChild(empty);
+  }
   for (const [name, value] of entries) {
     const row = document.createElement("div");
     row.className = "capability";
@@ -114,7 +126,7 @@ function render(report) {
         <code>${item.path}:${item.line}</code>
       </div>
       <code>${escapeHtml(item.evidence)}</code>
-      <p>${item.recommendation}</p>
+      <p class="safe-note">${safeWorkflowNote(item.category)}<small>${item.recommendation}</small></p>
     `;
     findings.appendChild(card);
   }
@@ -122,13 +134,24 @@ function render(report) {
 
 function capabilityCopy(name) {
   return ({
-    shell_access: "Can execute local commands",
-    browser_access: "May touch browser automation or profiles",
-    network_access: "Can call external services",
-    write_access: "Can modify or delete local files",
-    secret_reference: "Mentions credential-like variables",
-    instruction_file: "Can steer agent behavior",
+    shell_access: "This can become terminal injection if prompts or repo text steer execution.",
+    browser_access: "This can touch sessions, cookies, and logged-in pages if profiles are reused.",
+    network_access: "This can move data out of the local workflow if not allowlisted.",
+    write_access: "This can alter project files, caches, generated output, or local state.",
+    secret_reference: "This may pull credential names into model context or reports.",
+    instruction_file: "This can change how coding agents interpret future work.",
   })[name] || "Agent surface signal";
+}
+
+function safeWorkflowNote(name) {
+  return ({
+    shell_access: "Typical risk: terminal injection. Run only in a sandbox or require approval per command.",
+    browser_access: "Typical risk: logged-in browser exposure. Use a clean profile with no personal sessions.",
+    network_access: "Typical risk: silent exfiltration. Use an outbound allowlist for the tool.",
+    write_access: "Typical risk: unwanted file changes. Start read-only and narrow writable paths.",
+    secret_reference: "Typical risk: credential leakage. Keep values out of prompts, reports, and logs.",
+    instruction_file: "Typical risk: prompt steering. Treat repo instructions as untrusted until reviewed.",
+  })[name] || "Review this signal before installing the tool globally.";
 }
 
 function escapeHtml(value) {

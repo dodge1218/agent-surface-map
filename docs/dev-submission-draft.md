@@ -8,22 +8,24 @@ tags: devchallenge, gemmachallenge, gemma
 
 ## What I Built
 
-Agent Surface Map is a local-first safety scanner for developers who run coding agents with shell tools, MCP servers, repo instructions, browser automation, and local files.
+Agent Surface Map is a pre-install safety scanner for developers who add MCP servers, skills, browser tools, repo instructions, and other capabilities to coding agents.
 
-The scanner inventories the local agent operating surface, redacts secret-adjacent data, and uses Gemma 4 to turn that inventory into prioritized risk cards:
+Paste a GitHub repo link and the app runs a read-only review before the tool gets wired into Claude Code, Codex, Cursor, or another local agent workflow.
+
+The scanner inventories the agent operating surface, redacts secret-adjacent data, and uses Gemma 4 to turn that inventory into an install decision:
 
 - what the agent can execute
 - what it can write
 - where browser automation appears
 - which environment variables are referenced
 - which instruction files may steer future agent behavior
-- what to fix first
+- whether to add it carefully, sandbox it first, or reject it
 
-The goal is simple: before you hand an agent more tools, know what you have already handed it.
+The goal is simple: before you give a coding agent a new tool, know what that tool is asking for.
 
 ## Demo
 
-The demo app shows a scan of a sample agent stack. It includes a risk score, Gemma-generated review, category bars, and file-level findings.
+The demo app shows a scan of a sample agent stack. It includes a verdict, risk score, Gemma-generated review, risk signals, and safe workflow notes.
 
 Run it locally:
 
@@ -46,14 +48,15 @@ gemma-agent-surface-map/
 
 The deterministic scanner is intentionally boring: it walks local files, detects agent-surface signals, and redacts secret values.
 
-Gemma 4 is the judgment layer. It receives a compact, redacted inventory and returns a structured review with:
+Gemma 4 is the judgment layer. The deterministic scanner finds evidence, but Gemma 4 makes the install call. It receives a compact, redacted inventory and returns a structured review with:
 
 - summary
 - top risks
 - quick wins
 - hardening plan
+- install guidance
 
-I would use Gemma 4 31B Dense for the final review because the task needs nuanced security reasoning and prioritization more than tiny-device latency. Smaller Gemma 4 variants are a good fit for inline local checks, but the 31B model is the better reviewer for turning messy tool access into practical guidance.
+I would use Gemma 4 31B Dense for the final review because the task needs nuanced security reasoning and prioritization more than tiny-device latency. Smaller Gemma 4 variants are a good fit for inline local checks, but the 31B model is the better reviewer for turning messy tool access into a practical add/sandbox/reject decision.
 
 The model is not trusted with raw secrets and does not run commands. It explains a local scan that already happened.
 
@@ -62,4 +65,3 @@ The model is not trusted with raw secrets and does not run commands. It explains
 Coding agents changed the shape of developer risk. A repo can now include instructions for agents, MCP configs, browser access, package scripts, and credentials by reference. That is not just code; it is an operating surface.
 
 Agent Surface Map treats that surface as something builders should be able to inspect before they automate more work.
-

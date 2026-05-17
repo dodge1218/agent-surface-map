@@ -8,11 +8,21 @@
   </head>
   <body>
     <main class="shell">
+      <nav class="topbar" aria-label="Product">
+        <div class="brand">
+          <span class="brand-mark">
+            <i></i><i></i><i></i><i></i>
+          </span>
+          <span>Agent Surface Map</span>
+        </div>
+        <span class="topbar-note">Pre-install safety for MCPs, skills, and agent tools</span>
+      </nav>
+
       <section class="hero">
         <div>
           <p class="eyebrow">Pre-install review for agent tools</p>
           <h1>Is this tool safe to add?</h1>
-          <p class="lede">Paste a GitHub or MCP repo link. Agent Surface Map scans it before it gets wired into Claude Code, Codex, Cursor, or any local workflow.</p>
+          <p class="lede">Paste a GitHub or MCP repo link. Get a read-only install review before the tool reaches your shell, files, browser, or secrets.</p>
           <form id="scan-form" class="scan-form">
             <input id="scan-url" name="url" type="url" placeholder="https://github.com/org/mcp-server" autocomplete="off" />
             <button type="submit">Scan</button>
@@ -40,9 +50,21 @@
         </div>
       </section>
 
+      <section class="model-strip" aria-label="Why Gemma 4 matters">
+        <div>
+          <span class="meta-label">Why Gemma 4</span>
+          <h2>Scanner finds evidence. Gemma 4 makes the install call.</h2>
+        </div>
+        <p>The model reads the redacted surface map and explains whether the tool should be added globally, sandboxed first, or rejected. That judgment layer is the product.</p>
+      </section>
+
       <section class="summary-grid">
         <article class="verdict-panel">
-          <h2>Gemma 4 Review</h2>
+          <div class="gemma-kicker">
+            <span class="gemma-dot"></span>
+            <span>Core review</span>
+          </div>
+          <h2>Gemma 4 install verdict</h2>
           <p id="summary">Loading report...</p>
           <div class="action-grid">
             <div>
@@ -57,7 +79,9 @@
         </article>
 
         <article class="capability-panel">
-          <h2>Capability Map</h2>
+          <span class="meta-label">Why the score moved</span>
+          <h2>Risk signals found</h2>
+          <p class="panel-copy">Each signal is a permission pressure point. The count shows how often the scanner saw it in install-facing files.</p>
           <div id="capabilities" class="capabilities"></div>
         </article>
       </section>
@@ -66,7 +90,7 @@
         <div class="section-heading">
           <div>
             <span class="meta-label">Evidence</span>
-            <h2>What the tool asks for</h2>
+            <h2>Safe workflow notes</h2>
           </div>
           <span id="finding-count" class="count-pill">0 findings</span>
         </div>
