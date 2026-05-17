@@ -274,6 +274,28 @@ h3 {
   font-size: 1.02rem;
 }
 
+.workflow-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.9fr);
+  gap: 18px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.workflow-strip h2 {
+  margin: 4px 0 0;
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  line-height: 1.15;
+}
+
+.workflow-strip code {
+  justify-self: end;
+  max-width: 100%;
+}
+
 .meta-label {
   color: var(--muted);
   text-transform: uppercase;
@@ -485,6 +507,7 @@ code {
   .topbar,
   .review-strip,
   .model-strip,
+  .workflow-strip,
   .summary-grid,
   .action-grid,
   .finding,

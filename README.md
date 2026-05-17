@@ -69,3 +69,24 @@ Gemma 4 is central because the hard part is not collecting files. The hard part 
 - What should a solo builder do first?
 
 The app uses deterministic scanning for trust and Gemma 4 for judgment, prioritization, and plain-English guidance.
+
+## MCP Workflow
+
+The web app is the quick check. The MCP server is the developer-workflow integration.
+
+```bash
+python3 mcp_server.py
+```
+
+See `docs/mcp-usage.md` for client config and tool schemas. See `docs/security-notes.md` for the MCP server's own safety constraints.
+
+Use it when a coding agent is about to add a new MCP server, browser tool, skill, plugin, or repo instruction pack. The agent can call `scan_github_tool` or `scan_local_tool` first, then use the returned install context as constraints before touching local config.
+
+Optional local path allowlist:
+
+```bash
+export ASM_ALLOWED_ROOTS="/path/to/projects:/tmp/review-work"
+python3 mcp_server.py
+```
+
+Without `ASM_ALLOWED_ROOTS`, the MCP server still refuses obvious credential/profile directories and filesystem root.

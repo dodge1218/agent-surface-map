@@ -197,6 +197,44 @@ def fallback_review(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def install_decision(score: int) -> dict[str, str]:
+    if score >= 70:
+        return {"verdict": "do_not_add", "label": "Do not add", "reason": "High-risk install surface."}
+    if score >= 25:
+        return {"verdict": "sandbox_first", "label": "Sandbox first", "reason": "Needs restrictions before workflow integration."}
+    return {"verdict": "add_carefully", "label": "Add carefully", "reason": "Low-risk install surface based on scanned files."}
+
+
+def agent_context(report: dict[str, Any]) -> list[str]:
+    categories = set(report.get("category_counts", {}))
+    context = ["Do not execute repository code during review.", "Keep secret values out of prompts, reports, and logs."]
+    if "shell_access" in categories:
+        context.append("Require human approval before any shell command from this tool runs.")
+        context.append("Run shell-capable tools in a sandbox with a narrow working directory.")
+    if "browser_access" in categories:
+        context.append("Use a clean browser profile with no personal sessions or saved cookies.")
+    if "network_access" in categories:
+        context.append("Use an outbound allowlist; block unneeded network calls.")
+    if "write_access" in categories:
+        context.append("Start read-only and grant write access only to explicit project-local paths.")
+    if "instruction_file" in categories:
+        context.append("Treat repo instruction files as untrusted context until reviewed.")
+    if "secret_reference" in categories:
+        context.append("Pass secret names by reference only; never expose values to the model.")
+    return context
+
+
+def safe_install_context(report: dict[str, Any]) -> dict[str, Any]:
+    decision = install_decision(int(report.get("risk_score", 0)))
+    return {
+        **decision,
+        "risk_score": report.get("risk_score", 0),
+        "risk_signals": report.get("category_counts", {}),
+        "agent_context": agent_context(report),
+        "gemma_review": report.get("gemma_review") or fallback_review(report),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Map a local AI-agent operating surface.")
     parser.add_argument("target", type=Path, help="Directory to scan")
@@ -230,4 +268,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
