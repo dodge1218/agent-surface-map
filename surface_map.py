@@ -201,7 +201,7 @@ def install_decision(score: int) -> dict[str, str]:
     if score >= 70:
         return {"verdict": "do_not_add", "label": "Do not add", "reason": "High-risk install surface."}
     if score >= 25:
-        return {"verdict": "sandbox_first", "label": "Sandbox first", "reason": "Needs restrictions before workflow integration."}
+        return {"verdict": "sandbox_first", "label": "Review first", "reason": "Use isolation before workflow integration."}
     return {"verdict": "add_carefully", "label": "Add carefully", "reason": "Low-risk install surface based on scanned files."}
 
 

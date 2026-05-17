@@ -64,7 +64,7 @@ function decisionFor(score) {
     return { text: "Do not add", detail: "High-risk install", className: "block" };
   }
   if (score >= 25) {
-    return { text: "Sandbox first", detail: "Needs restrictions", className: "sandbox" };
+    return { text: "Review first", detail: "Use isolation", className: "sandbox" };
   }
   return { text: "Add carefully", detail: "Low-risk install", className: "allow" };
 }
