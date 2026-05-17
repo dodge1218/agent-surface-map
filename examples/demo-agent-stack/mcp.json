@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    },
+    "browser": {
+      "command": "node",
+      "args": ["./tools/browser-agent.js"],
+      "env": {
+        "BROWSER_PROFILE": "default"
+      }
+    }
+  }
+}
+

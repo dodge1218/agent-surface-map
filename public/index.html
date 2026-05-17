@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Agent Surface Map</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Pre-install review for agent tools</p>
+          <h1>Is this tool safe to add?</h1>
+          <p class="lede">Paste a GitHub or MCP repo link. Agent Surface Map scans it before it gets wired into Claude Code, Codex, Cursor, or any local workflow.</p>
+          <form id="scan-form" class="scan-form">
+            <input id="scan-url" name="url" type="url" placeholder="https://github.com/org/mcp-server" autocomplete="off" />
+            <button type="submit">Scan</button>
+          </form>
+          <p id="scan-status" class="scan-status">Demo report loaded. Paste a link to run a fresh local review.</p>
+        </div>
+        <div class="decision-card" aria-label="Install decision">
+          <span id="decision">Reviewing</span>
+          <small id="decision-detail">Gemma 4 verdict</small>
+        </div>
+      </section>
+
+      <section class="review-strip" aria-label="Review context">
+        <div>
+          <span class="meta-label">Proposed capability</span>
+          <strong id="target-name">Loading...</strong>
+        </div>
+        <div>
+          <span class="meta-label">Review mode</span>
+          <code id="review-mode">read-only local scan + Gemma 4 review</code>
+        </div>
+        <div>
+          <span class="meta-label">Risk score</span>
+          <strong id="risk-score">--</strong>
+        </div>
+      </section>
+
+      <section class="summary-grid">
+        <article class="verdict-panel">
+          <h2>Gemma 4 Review</h2>
+          <p id="summary">Loading report...</p>
+          <div class="action-grid">
+            <div>
+              <h3>Top Risks</h3>
+              <ul id="top-risks"></ul>
+            </div>
+            <div>
+              <h3>Hardening Plan</h3>
+              <ul id="hardening-plan"></ul>
+            </div>
+          </div>
+        </article>
+
+        <article class="capability-panel">
+          <h2>Capability Map</h2>
+          <div id="capabilities" class="capabilities"></div>
+        </article>
+      </section>
+
+      <section class="panel evidence-panel">
+        <div class="section-heading">
+          <div>
+            <span class="meta-label">Evidence</span>
+            <h2>What the tool asks for</h2>
+          </div>
+          <span id="finding-count" class="count-pill">0 findings</span>
+        </div>
+        <div id="findings" class="findings"></div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

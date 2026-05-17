@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "clean": "rm -rf dist .cache",
+    "smoke": "node scripts/smoke.js"
+  },
+  "dependencies": {
+    "playwright": "^1.0.0"
+  }
+}
+
