@@ -6,6 +6,10 @@ It inventories the files that define what an agent can see and do, then asks Gem
 
 This project is a submission candidate for the DEV Gemma 4 Challenge.
 
+## Ten-Word Version
+
+Paste repo. Scanner checks risk. Gemma explains. Agent installs safer.
+
 ## Why This Exists
 
 Modern developer agents can read repos, run shell commands, browse logged-in sites, call local MCP tools, write files, and spend model-provider credits. That means a developer laptop is starting to look like a small production environment.
@@ -41,6 +45,16 @@ http://localhost:8787
 ```
 
 The demo server accepts simple public GitHub repository URLs, clones them with shallow/no-submodule settings, removes `.git`, scans local files, and returns the same verdict screen. It does not execute repository code.
+
+## Process
+
+See `docs/process.md` for the full web + MCP workflow.
+
+Short version:
+
+```text
+link/path -> read-only scan -> redacted surface map -> Gemma review -> install context
+```
 
 ## Vercel
 

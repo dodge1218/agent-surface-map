@@ -12,6 +12,12 @@ Agent Surface Map is a pre-install safety scanner for developers who add MCP ser
 
 Paste a GitHub repo link and the app runs a read-only review before the tool gets wired into Claude Code, Codex, Cursor, or another local agent workflow.
 
+The informal version:
+
+```text
+Paste repo. Scanner checks risk. Gemma explains. Agent installs safer.
+```
+
 The scanner inventories the agent operating surface, redacts secret-adjacent data, and uses Gemma 4 to turn that inventory into an install decision:
 
 - what the agent can execute
@@ -25,23 +31,37 @@ The goal is simple: before you give a coding agent a new tool, know what that to
 
 ## Demo
 
-The demo app shows a scan of a sample agent stack. It includes a verdict, risk score, Gemma-generated review, risk signals, and safe workflow notes.
+The web demo shows a scan of a sample agent stack. It includes a verdict, risk score, Gemma-generated review, risk signals, and safe workflow notes.
 
 Run it locally:
 
 ```bash
 python3 surface_map.py examples/demo-agent-stack --out public/sample-report.json
-python3 -m http.server 8787 --directory public
+python3 server.py
 ```
 
 Then open `http://localhost:8787`.
 
+For developer workflow, the repo also includes an MCP server:
+
+```bash
+python3 mcp_server.py
+```
+
+That lets a coding agent call `scan_github_tool(url)` before editing local MCP config or running install commands.
+
 ## Code
 
-Repository path for the working draft:
+Repository:
 
 ```text
-gemma-agent-surface-map/
+https://github.com/dodge1218/agent-surface-map
+```
+
+Live demo:
+
+```text
+https://gemma-agent-surface-map.vercel.app
 ```
 
 ## How I Used Gemma 4
