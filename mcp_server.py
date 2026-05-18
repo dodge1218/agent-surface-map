@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
-from surface_map import fallback_review, safe_install_context, scan
+from surface_map import review_report, safe_install_context, scan
 
 
 URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
@@ -112,7 +112,7 @@ def scan_local(path: str) -> dict:
     assert_allowed_local_path(root)
     report = scan(root)
     report["target"] = str(root)
-    report["gemma_review"] = fallback_review(report)
+    review_report(report)
     report["install_context"] = safe_install_context(report)
     return report
 
@@ -149,7 +149,7 @@ def scan_github(url: str) -> dict:
         report = scan(destination)
         report["source_url"] = parsed.geturl().rstrip("/")
         report["target"] = parsed.path.strip("/")
-        report["gemma_review"] = fallback_review(report)
+        review_report(report)
         report["install_context"] = safe_install_context(report)
         return report
 

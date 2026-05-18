@@ -87,6 +87,8 @@ export GEMMA_MODEL="google/gemma-4-31b"
 python3 surface_map.py /path/to/agent/repo --out public/sample-report.json --gemma
 ```
 
+The local server, Vercel API, and MCP server use Gemma automatically when `GEMMA_API_KEY` and `GEMMA_BASE_URL` are configured. If Gemma is not configured or the provider call fails, the report falls back to the deterministic local review and sets `review_source` to `fallback`.
+
 The prompt sent to Gemma contains only file paths, matched config snippets, and redacted environment variable names. Secret values are not read or sent.
 
 ## Challenge Fit

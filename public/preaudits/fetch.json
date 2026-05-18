@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T16:55:38Z",
+  "generated_at": "2026-05-18T17:02:30Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/fetch",
   "scanned_files": 2,
   "risk_score": 6,
@@ -49,5 +49,5 @@
     "why_use_it": "Lets an agent fetch URLs and pull remote text into context.",
     "pre_audit_note": "Network fetch is useful for docs and APIs. Use outbound allowlists for sensitive workflows."
   },
-  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 6,\n  \"category_counts\": {\n    \"network_access\": 2\n  },\n  \"rule_counts\": {},\n  \"findings\": [\n    {\n      \"category\": \"network_access\",\n      \"severity\": \"medium\",\n      \"path\": \"README.md\",\n      \"line\": 1,\n      \"evidence\": \"# Fetch MCP\",\n      \"recommendation\": \"Define network policy and block unneeded outbound calls during routine agent work.\"\n    },\n    {\n      \"category\": \"network_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 3,\n      \"evidence\": \"\\\"fetch\\\": {\",\n      \"recommendation\": \"Define network policy and block unneeded outbound calls during routine agent work.\"\n    }\n  ],\n  \"rules\": []\n}"
+  "review_source": "fallback"
 }

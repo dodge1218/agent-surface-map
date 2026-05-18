@@ -40,6 +40,7 @@ Returns a JSON report with:
 - install verdict
 - risk score
 - risk signals
+- review source
 - redacted evidence
 - safe install context for the calling agent
 
@@ -74,5 +75,11 @@ Agent calls: scan_github_tool(url)
 Agent receives: sandbox_first / do_not_add / add_carefully plus constraints
 Agent follows the returned context before editing config or running install commands.
 ```
+
+## Gemma Review Source
+
+If `GEMMA_API_KEY` and `GEMMA_BASE_URL` are set, MCP scan tools attach a Gemma review and return `review_source: "gemma"`.
+
+If Gemma is not configured or the provider call fails, the MCP server returns the deterministic fallback review with `review_source: "fallback"` and does not fail the scan.
 
 Read `docs/security-notes.md` before using this as a standing local MCP server.

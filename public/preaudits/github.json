@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T16:55:39Z",
+  "generated_at": "2026-05-18T17:02:31Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/github",
   "scanned_files": 2,
   "risk_score": 9,
@@ -55,5 +55,5 @@
     "why_use_it": "Lets an agent inspect repositories, issues, pull requests, CI output, and project metadata.",
     "pre_audit_note": "Scope tokens tightly. Prefer read-only repository access until a workflow needs writes."
   },
-  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 9,\n  \"category_counts\": {\n    \"secret_reference\": 1\n  },\n  \"rule_counts\": {\n    \"cloud_credential_surface\": 1\n  },\n  \"findings\": [\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"GITHUB_TOKEN\\\": <redacted>\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"id\": \"cloud_credential_reference\",\n      \"category\": \"cloud_credential_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"GITHUB_TOKEN\\\": <redacted>\",\n      \"recommendation\": \"Pass cloud credentials only through scoped, audited mechanisms; never expose values to model context.\"\n    }\n  ]\n}"
+  "review_source": "fallback"
 }

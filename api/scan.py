@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from surface_map import fallback_review, scan  # noqa: E402
+from surface_map import review_report, scan  # noqa: E402
 
 
 MAX_BODY = 8192
@@ -72,7 +72,7 @@ def scan_url(url: str) -> dict:
         report = scan(roots[0])
         report["source_url"] = url
         report["target"] = f"{owner}/{repo}"
-        report["gemma_review"] = fallback_review(report)
+        review_report(report)
         return report
 
 

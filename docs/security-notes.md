@@ -19,6 +19,8 @@ Agent Surface Map reviews untrusted MCP/tool repositories. Its own MCP server mu
 - `ASM_ALLOWED_ROOTS` can restrict local scans to explicit parent directories.
 - MCP responses are bounded and findings are truncated for large reports.
 - Secret-looking values are redacted in evidence excerpts.
+- Gemma calls receive only the redacted surface map, not raw repository contents or secret values.
+- Gemma failure does not block scanning; reports fall back to deterministic local review.
 
 ## Public-Safe Rule Layer
 
@@ -33,6 +35,7 @@ The scanner includes generic public rules for common MCP/agent install risks:
 - Docker socket references
 - Kubernetes config references
 - cloud credential references
+- database connection references
 - prompt-override language
 - browser profile/session reuse
 

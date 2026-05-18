@@ -304,6 +304,10 @@ def call_gemma(prompt: str) -> dict[str, Any]:
         return {"summary": content, "top_risks": [], "quick_wins": [], "hardening_plan": []}
 
 
+def gemma_configured() -> bool:
+    return bool(os.environ.get("GEMMA_API_KEY") and os.environ.get("GEMMA_BASE_URL"))
+
+
 def fallback_review(report: dict[str, Any]) -> dict[str, Any]:
     counts = report["category_counts"]
     combined = {**counts}
@@ -324,6 +328,26 @@ def fallback_review(report: dict[str, Any]) -> dict[str, Any]:
             "Re-run the scan and compare the risk score before shipping.",
         ],
     }
+
+
+def review_report(report: dict[str, Any], *, allow_gemma: bool | None = None) -> dict[str, Any]:
+    """Attach a Gemma review when configured, otherwise attach deterministic fallback."""
+    if allow_gemma is None:
+        allow_gemma = gemma_configured()
+    if allow_gemma:
+        prompt = build_gemma_prompt(report)
+        report["gemma_prompt_preview"] = prompt
+        try:
+            report["gemma_review"] = call_gemma(prompt)
+            report["review_source"] = "gemma"
+            report.pop("gemma_error", None)
+            return report
+        except (RuntimeError, urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError) as exc:
+            report["gemma_error"] = str(exc)
+
+    report["gemma_review"] = fallback_review(report)
+    report["review_source"] = "fallback"
+    return report
 
 
 def install_decision(score: int) -> dict[str, str]:
@@ -391,16 +415,7 @@ def main() -> int:
         return 2
 
     report = scan(root)
-    prompt = build_gemma_prompt(report)
-    report["gemma_prompt_preview"] = prompt
-    if args.gemma:
-        try:
-            report["gemma_review"] = call_gemma(prompt)
-        except (RuntimeError, urllib.error.URLError, TimeoutError) as exc:
-            report["gemma_review"] = fallback_review(report)
-            report["gemma_error"] = str(exc)
-    else:
-        report["gemma_review"] = fallback_review(report)
+    review_report(report, allow_gemma=args.gemma)
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

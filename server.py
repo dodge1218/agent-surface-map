@@ -12,7 +12,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse
 
-from surface_map import fallback_review, scan
+from surface_map import review_report, scan
 
 
 ROOT = Path(__file__).resolve().parent
@@ -80,7 +80,7 @@ def scan_url(url: str) -> dict:
         report = scan(destination)
         report["source_url"] = url
         report["target"] = parsed.path.strip("/") or url
-        report["gemma_review"] = fallback_review(report)
+        review_report(report)
         return report
 
 

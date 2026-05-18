@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from surface_map import safe_install_context, scan  # noqa: E402
+from surface_map import review_report, safe_install_context, scan  # noqa: E402
 from mcp_server import assert_allowed_local_path  # noqa: E402
 
 
@@ -82,6 +82,13 @@ class SurfaceMapTests(unittest.TestCase):
         self.assertEqual(report["profile"]["name"], "Postgres MCP")
         self.assertIn("database_credential_surface", report["rule_counts"])
         self.assertTrue(any("database" in item.lower() for item in context["agent_context"]))
+
+    def test_review_report_marks_fallback_source(self):
+        report = scan(ROOT / "examples/demo-agent-stack")
+        review_report(report, allow_gemma=False)
+
+        self.assertEqual(report["review_source"], "fallback")
+        self.assertIn("summary", report["gemma_review"])
 
 
 class McpProtocolTests(unittest.TestCase):

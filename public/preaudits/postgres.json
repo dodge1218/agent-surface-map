@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T16:55:42Z",
+  "generated_at": "2026-05-18T17:02:34Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/postgres",
   "scanned_files": 2,
   "risk_score": 15,
@@ -65,5 +65,5 @@
     "why_use_it": "Lets an agent query application data or development databases.",
     "pre_audit_note": "Use read-only database users, local replicas, query limits, and no production credentials by default."
   },
-  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 15,\n  \"category_counts\": {\n    \"secret_reference\": 1\n  },\n  \"rule_counts\": {\n    \"database_credential_surface\": 2\n  },\n  \"findings\": [\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"DATABASE_URL\\\": \\\"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\\\"\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"id\": \"database_connection_reference\",\n      \"category\": \"database_credential_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@modelcontextprotocol/server-postgres\\\"],\",\n      \"recommendation\": \"Use read-only database users, local replicas, query limits, and no production credentials by default.\"\n    },\n    {\n      \"id\": \"database_connection_reference\",\n      \"category\": \"database_credential_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"DATABASE_URL\\\": \\\"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\\\"\",\n      \"recommendation\": \"Use read-only database users, local replicas, query limits, and no production credentials by default.\"\n    }\n  ]\n}"
+  "review_source": "fallback"
 }

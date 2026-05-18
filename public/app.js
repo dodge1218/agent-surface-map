@@ -83,7 +83,7 @@ function render(report) {
   document.getElementById("decision-detail").textContent = decision.detail;
   document.getElementById("risk-score").textContent = report.risk_score;
   document.getElementById("target-name").textContent = reportName(report);
-  document.getElementById("review-mode").textContent = report.gemma_error ? "read-only scan + local fallback review" : "read-only local scan + Gemma 4 review";
+  document.getElementById("review-mode").textContent = reviewMode(report);
   document.getElementById("finding-count").textContent = `${(report.findings || []).length} findings`;
 
   const review = report.gemma_review || {};
@@ -135,6 +135,16 @@ function render(report) {
     `;
     findings.appendChild(card);
   }
+}
+
+function reviewMode(report) {
+  if (report.review_source === "gemma") {
+    return "read-only local scan + Gemma 4 review";
+  }
+  if (report.gemma_error) {
+    return "read-only scan + fallback review";
+  }
+  return "read-only scan + deterministic fallback review";
 }
 
 async function loadExamples() {

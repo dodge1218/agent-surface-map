@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T16:55:40Z",
+  "generated_at": "2026-05-18T17:02:32Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/gmail",
   "scanned_files": 2,
   "risk_score": 19,
@@ -75,5 +75,5 @@
     "why_use_it": "Lets an agent search, summarize, triage, draft, and organize mailbox content.",
     "pre_audit_note": "Treat mailbox access as private data access. Avoid automatic send/delete actions."
   },
-  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 19,\n  \"category_counts\": {\n    \"secret_reference\": 2\n  },\n  \"rule_counts\": {\n    \"broad_filesystem_access\": 1,\n    \"cloud_credential_surface\": 1\n  },\n  \"findings\": [\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"GOOGLE_APPLICATION_CREDENTIALS\\\": \\\"/home/user/.config/gcloud/application_default_credentials.json\\\",\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    },\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 8,\n      \"evidence\": \"\\\"GMAIL_REFRESH_TOKEN\\\": <redacted>\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"id\": \"broad_filesystem_access\",\n      \"category\": \"broad_filesystem_access\",\n      \"severity\": \"high\",\n      \"score\": 7,\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"GOOGLE_APPLICATION_CREDENTIALS\\\": \\\"/home/user/.config/gcloud/application_default_credentials.json\\\",\",\n      \"recommendation\": \"Do not grant home, root, or system paths to agent tools; mount only the project directory needed.\"\n    },\n    {\n      \"id\": \"cloud_credential_reference\",\n      \"category\": \"cloud_credential_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"GOOGLE_APPLICATION_CREDENTIALS\\\": \\\"/home/user/.config/gcloud/application_default_credentials.json\\\",\",\n      \"recommendation\": \"Pass cloud credentials only through scoped, audited mechanisms; never expose values to model context.\"\n    }\n  ]\n}"
+  "review_source": "fallback"
 }
