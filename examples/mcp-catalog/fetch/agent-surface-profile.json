@@ -1,0 +1,7 @@
+{
+  "id": "fetch",
+  "name": "Fetch MCP",
+  "family": "Network access",
+  "why_use_it": "Lets an agent fetch URLs and pull remote text into context.",
+  "pre_audit_note": "Network fetch is useful for docs and APIs. Use outbound allowlists for sensitive workflows."
+}

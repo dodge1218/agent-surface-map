@@ -1,0 +1,69 @@
+{
+  "generated_at": "2026-05-18T16:55:42Z",
+  "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/postgres",
+  "scanned_files": 2,
+  "risk_score": 15,
+  "category_counts": {
+    "secret_reference": 1
+  },
+  "rule_counts": {
+    "database_credential_surface": 2
+  },
+  "findings": [
+    {
+      "category": "secret_reference",
+      "severity": "medium",
+      "path": "mcp.json",
+      "line": 7,
+      "evidence": "\"DATABASE_URL\": \"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\"",
+      "recommendation": "Reference secret names only in reports; never send values to model context."
+    }
+  ],
+  "rules": [
+    {
+      "id": "database_connection_reference",
+      "category": "database_credential_surface",
+      "severity": "medium",
+      "score": 6,
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"-y\", \"@modelcontextprotocol/server-postgres\"],",
+      "recommendation": "Use read-only database users, local replicas, query limits, and no production credentials by default."
+    },
+    {
+      "id": "database_connection_reference",
+      "category": "database_credential_surface",
+      "severity": "medium",
+      "score": 6,
+      "path": "mcp.json",
+      "line": 7,
+      "evidence": "\"DATABASE_URL\": \"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\"",
+      "recommendation": "Use read-only database users, local replicas, query limits, and no production credentials by default."
+    }
+  ],
+  "gemma_review": {
+    "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "top_risks": [
+      "database credential surface appeared 2 time(s).",
+      "secret reference appeared 1 time(s)."
+    ],
+    "quick_wins": [
+      "Run read-only before granting write access.",
+      "Document which MCP servers and browser profiles are allowed.",
+      "Keep secret values out of model context and reports."
+    ],
+    "hardening_plan": [
+      "Inventory agent config and instruction files.",
+      "Narrow shell, browser, network, and write permissions.",
+      "Re-run the scan and compare the risk score before shipping."
+    ]
+  },
+  "profile": {
+    "id": "postgres",
+    "name": "Postgres MCP",
+    "family": "Database",
+    "why_use_it": "Lets an agent query application data or development databases.",
+    "pre_audit_note": "Use read-only database users, local replicas, query limits, and no production credentials by default."
+  },
+  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 15,\n  \"category_counts\": {\n    \"secret_reference\": 1\n  },\n  \"rule_counts\": {\n    \"database_credential_surface\": 2\n  },\n  \"findings\": [\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"DATABASE_URL\\\": \\\"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\\\"\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"id\": \"database_connection_reference\",\n      \"category\": \"database_credential_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@modelcontextprotocol/server-postgres\\\"],\",\n      \"recommendation\": \"Use read-only database users, local replicas, query limits, and no production credentials by default.\"\n    },\n    {\n      \"id\": \"database_connection_reference\",\n      \"category\": \"database_credential_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"DATABASE_URL\\\": \\\"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\\\"\",\n      \"recommendation\": \"Use read-only database users, local replicas, query limits, and no production credentials by default.\"\n    }\n  ]\n}"
+}

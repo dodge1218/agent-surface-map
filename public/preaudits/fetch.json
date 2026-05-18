@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-05-18T16:55:38Z",
+  "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/fetch",
+  "scanned_files": 2,
+  "risk_score": 6,
+  "category_counts": {
+    "network_access": 2
+  },
+  "rule_counts": {},
+  "findings": [
+    {
+      "category": "network_access",
+      "severity": "medium",
+      "path": "README.md",
+      "line": 1,
+      "evidence": "# Fetch MCP",
+      "recommendation": "Define network policy and block unneeded outbound calls during routine agent work."
+    },
+    {
+      "category": "network_access",
+      "severity": "medium",
+      "path": "mcp.json",
+      "line": 3,
+      "evidence": "\"fetch\": {",
+      "recommendation": "Define network policy and block unneeded outbound calls during routine agent work."
+    }
+  ],
+  "rules": [],
+  "gemma_review": {
+    "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "top_risks": [
+      "network access appeared 2 time(s)."
+    ],
+    "quick_wins": [
+      "Run read-only before granting write access.",
+      "Document which MCP servers and browser profiles are allowed.",
+      "Keep secret values out of model context and reports."
+    ],
+    "hardening_plan": [
+      "Inventory agent config and instruction files.",
+      "Narrow shell, browser, network, and write permissions.",
+      "Re-run the scan and compare the risk score before shipping."
+    ]
+  },
+  "profile": {
+    "id": "fetch",
+    "name": "Fetch MCP",
+    "family": "Network access",
+    "why_use_it": "Lets an agent fetch URLs and pull remote text into context.",
+    "pre_audit_note": "Network fetch is useful for docs and APIs. Use outbound allowlists for sensitive workflows."
+  },
+  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 6,\n  \"category_counts\": {\n    \"network_access\": 2\n  },\n  \"rule_counts\": {},\n  \"findings\": [\n    {\n      \"category\": \"network_access\",\n      \"severity\": \"medium\",\n      \"path\": \"README.md\",\n      \"line\": 1,\n      \"evidence\": \"# Fetch MCP\",\n      \"recommendation\": \"Define network policy and block unneeded outbound calls during routine agent work.\"\n    },\n    {\n      \"category\": \"network_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 3,\n      \"evidence\": \"\\\"fetch\\\": {\",\n      \"recommendation\": \"Define network policy and block unneeded outbound calls during routine agent work.\"\n    }\n  ],\n  \"rules\": []\n}"
+}

@@ -2,6 +2,7 @@ async function loadReport() {
   const response = await fetch("sample-report.json");
   const report = await response.json();
   render(report);
+  await loadExamples();
 }
 
 const form = document.getElementById("scan-form");
@@ -59,6 +60,10 @@ function basename(path) {
   return String(path || "").split("/").filter(Boolean).pop() || "local agent tool";
 }
 
+function reportName(report) {
+  return report.profile?.name || report.source_url || basename(report.target);
+}
+
 function decisionFor(score) {
   if (score >= 70) {
     return { text: "Do not add", detail: "High-risk install", className: "block" };
@@ -77,7 +82,7 @@ function render(report) {
   document.getElementById("decision").textContent = decision.text;
   document.getElementById("decision-detail").textContent = decision.detail;
   document.getElementById("risk-score").textContent = report.risk_score;
-  document.getElementById("target-name").textContent = report.source_url || basename(report.target);
+  document.getElementById("target-name").textContent = reportName(report);
   document.getElementById("review-mode").textContent = report.gemma_error ? "read-only scan + local fallback review" : "read-only local scan + Gemma 4 review";
   document.getElementById("finding-count").textContent = `${(report.findings || []).length} findings`;
 
@@ -132,6 +137,36 @@ function render(report) {
   }
 }
 
+async function loadExamples() {
+  const response = await fetch("example-mcps.json");
+  const examples = await response.json();
+  const node = document.getElementById("example-mcps");
+  node.innerHTML = "";
+  for (const item of examples) {
+    const card = document.createElement("article");
+    card.className = "example-card";
+    card.innerHTML = `
+      <div class="example-topline">
+        <span>${escapeHtml(item.family)}</span>
+        <button type="button" data-report="${escapeHtml(item.report)}">Load review</button>
+      </div>
+      <h3>${escapeHtml(item.name)}</h3>
+      <p>${escapeHtml(item.why)}</p>
+      <dl>
+        <div><dt>Risk</dt><dd>${escapeHtml(item.risk)}</dd></div>
+        <div><dt>Install</dt><dd>${escapeHtml(item.install)}</dd></div>
+      </dl>
+    `;
+    card.querySelector("button").addEventListener("click", async () => {
+      statusNode.textContent = `Loaded pre-audit template: ${item.name}`;
+      const reportResponse = await fetch(item.report);
+      render(await reportResponse.json());
+      document.querySelector(".verdict-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    node.appendChild(card);
+  }
+}
+
 function capabilityCopy(name) {
   return ({
     shell_access: "This can become terminal injection if prompts or repo text steer execution.",
@@ -151,6 +186,7 @@ function capabilityCopy(name) {
     cloud_credential_surface: "This may expose cloud or platform credentials by reference.",
     prompt_injection_surface: "This can steer the agent through repo-controlled instructions.",
     browser_session_surface: "This can reuse authenticated browser state or cookies.",
+    database_credential_surface: "This can expose database credentials or private records.",
   })[name] || "Agent surface signal";
 }
 
@@ -173,6 +209,7 @@ function safeWorkflowNote(name) {
     cloud_credential_surface: "Typical risk: cloud account exposure. Scope and isolate credentials.",
     prompt_injection_surface: "Typical risk: prompt steering. Treat these instructions as data.",
     browser_session_surface: "Typical risk: session leakage. Use a clean browser profile.",
+    database_credential_surface: "Typical risk: private data exposure. Use read-only users and local replicas.",
   })[name] || "Review this signal before installing the tool globally.";
 }
 

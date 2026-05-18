@@ -1,0 +1,59 @@
+{
+  "generated_at": "2026-05-18T16:55:39Z",
+  "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/filesystem",
+  "scanned_files": 2,
+  "risk_score": 11,
+  "category_counts": {},
+  "rule_counts": {
+    "filesystem_tool_surface": 1,
+    "broad_filesystem_access": 1
+  },
+  "findings": [],
+  "rules": [
+    {
+      "id": "filesystem_tool_surface",
+      "category": "filesystem_tool_surface",
+      "severity": "medium",
+      "score": 4,
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/home/user/projects/demo\"]",
+      "recommendation": "Review the filesystem mount scope before installing; prefer project-local read-only paths."
+    },
+    {
+      "id": "broad_filesystem_access",
+      "category": "broad_filesystem_access",
+      "severity": "high",
+      "score": 7,
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/home/user/projects/demo\"]",
+      "recommendation": "Do not grant home, root, or system paths to agent tools; mount only the project directory needed."
+    }
+  ],
+  "gemma_review": {
+    "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "top_risks": [
+      "filesystem tool surface appeared 1 time(s).",
+      "broad filesystem access appeared 1 time(s)."
+    ],
+    "quick_wins": [
+      "Run read-only before granting write access.",
+      "Document which MCP servers and browser profiles are allowed.",
+      "Keep secret values out of model context and reports."
+    ],
+    "hardening_plan": [
+      "Inventory agent config and instruction files.",
+      "Narrow shell, browser, network, and write permissions.",
+      "Re-run the scan and compare the risk score before shipping."
+    ]
+  },
+  "profile": {
+    "id": "filesystem",
+    "name": "Filesystem MCP",
+    "family": "Local files",
+    "why_use_it": "Lets an agent read or write files through an MCP tool.",
+    "pre_audit_note": "Mount only the project directory. Avoid home, root, system, cache, and credential directories."
+  },
+  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 11,\n  \"category_counts\": {},\n  \"rule_counts\": {\n    \"filesystem_tool_surface\": 1,\n    \"broad_filesystem_access\": 1\n  },\n  \"findings\": [],\n  \"rules\": [\n    {\n      \"id\": \"filesystem_tool_surface\",\n      \"category\": \"filesystem_tool_surface\",\n      \"severity\": \"medium\",\n      \"score\": 4,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@modelcontextprotocol/server-filesystem\\\", \\\"/home/user/projects/demo\\\"]\",\n      \"recommendation\": \"Review the filesystem mount scope before installing; prefer project-local read-only paths.\"\n    },\n    {\n      \"id\": \"broad_filesystem_access\",\n      \"category\": \"broad_filesystem_access\",\n      \"severity\": \"high\",\n      \"score\": 7,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@modelcontextprotocol/server-filesystem\\\", \\\"/home/user/projects/demo\\\"]\",\n      \"recommendation\": \"Do not grant home, root, or system paths to agent tools; mount only the project directory needed.\"\n    }\n  ]\n}"
+}

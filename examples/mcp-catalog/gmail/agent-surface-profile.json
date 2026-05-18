@@ -1,0 +1,7 @@
+{
+  "id": "gmail",
+  "name": "Gmail MCP",
+  "family": "Communication",
+  "why_use_it": "Lets an agent search, summarize, triage, draft, and organize mailbox content.",
+  "pre_audit_note": "Treat mailbox access as private data access. Avoid automatic send/delete actions."
+}

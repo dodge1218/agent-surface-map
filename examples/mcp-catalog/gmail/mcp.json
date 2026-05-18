@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "gmail": {
+      "command": "node",
+      "args": ["dist/gmail-mcp.js"],
+      "env": {
+        "GOOGLE_APPLICATION_CREDENTIALS": "/home/user/.config/gcloud/application_default_credentials.json",
+        "GMAIL_REFRESH_TOKEN": "${GMAIL_REFRESH_TOKEN}"
+      }
+    }
+  }
+}

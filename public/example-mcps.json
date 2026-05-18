@@ -1,0 +1,74 @@
+[
+  {
+    "id": "stealth-browser",
+    "name": "Stealth Browser MCP",
+    "family": "Browser automation",
+    "why": "Deep web-app inspection, screenshots, DOM, network, cookies, storage.",
+    "risk": "Logged-in browser/session exposure.",
+    "install": "Clean profile, site allowlist, visible approvals.",
+    "report": "preaudits/stealth-browser.json"
+  },
+  {
+    "id": "github",
+    "name": "GitHub MCP",
+    "family": "Developer platform",
+    "why": "Repos, issues, PRs, review threads, CI output.",
+    "risk": "Platform token scope and write authority.",
+    "install": "Read-only token first; require approval for writes.",
+    "report": "preaudits/github.json"
+  },
+  {
+    "id": "gmail",
+    "name": "Gmail MCP",
+    "family": "Communication",
+    "why": "Mailbox search, triage, summaries, drafts.",
+    "risk": "Private mailbox context and send/delete actions.",
+    "install": "Scoped OAuth, no automatic sends or destructive actions.",
+    "report": "preaudits/gmail.json"
+  },
+  {
+    "id": "filesystem",
+    "name": "Filesystem MCP",
+    "family": "Local files",
+    "why": "Agent-readable project files and controlled file writes.",
+    "risk": "Oversized local file mounts.",
+    "install": "Project-local read-only mount before writes.",
+    "report": "preaudits/filesystem.json"
+  },
+  {
+    "id": "playwright",
+    "name": "Playwright MCP",
+    "family": "Browser automation",
+    "why": "Open pages, click, type, screenshot, inspect browser state.",
+    "risk": "Browser session reuse and credentialed page actions.",
+    "install": "Clean profile, scoped sites, no silent credential entry.",
+    "report": "preaudits/playwright.json"
+  },
+  {
+    "id": "fetch",
+    "name": "Fetch MCP",
+    "family": "Network access",
+    "why": "Pull docs, API responses, and remote text into context.",
+    "risk": "Remote content and outbound data flow.",
+    "install": "Outbound allowlist for sensitive workflows.",
+    "report": "preaudits/fetch.json"
+  },
+  {
+    "id": "postgres",
+    "name": "Postgres MCP",
+    "family": "Database",
+    "why": "Query application data and development databases.",
+    "risk": "Database credentials and private records.",
+    "install": "Read-only users, local replicas, query limits.",
+    "report": "preaudits/postgres.json"
+  },
+  {
+    "id": "memory-shell",
+    "name": "Memory + Shell MCP",
+    "family": "Local automation",
+    "why": "Persist notes and run local helper commands.",
+    "risk": "Terminal injection and sensitive persisted context.",
+    "install": "Command allowlists, timeouts, sandboxing, approval.",
+    "report": "preaudits/memory-shell.json"
+  }
+]

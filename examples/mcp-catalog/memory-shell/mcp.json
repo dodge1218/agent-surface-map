@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "memory-shell": {
+      "command": "node",
+      "args": ["server.js", "--enable-shell", "--cwd", "/home/user/projects/demo"],
+      "env": {
+        "MEMORY_STORE": "/home/user/.local/share/agent-memory.json"
+      }
+    }
+  }
+}

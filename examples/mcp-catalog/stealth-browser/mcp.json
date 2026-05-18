@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "stealth-browser": {
+      "command": "python",
+      "args": ["src/server.py", "--user-data-dir", "/home/user/.config/google-chrome/Default"],
+      "env": {
+        "CHROME_PATH": "/opt/google/chrome/google-chrome",
+        "DISPLAY": ":0",
+        "XAUTHORITY": "/home/user/.Xauthority"
+      }
+    }
+  }
+}

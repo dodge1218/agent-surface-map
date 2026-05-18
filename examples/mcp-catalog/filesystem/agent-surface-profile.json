@@ -1,0 +1,7 @@
+{
+  "id": "filesystem",
+  "name": "Filesystem MCP",
+  "family": "Local files",
+  "why_use_it": "Lets an agent read or write files through an MCP tool.",
+  "pre_audit_note": "Mount only the project directory. Avoid home, root, system, cache, and credential directories."
+}

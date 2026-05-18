@@ -75,6 +75,14 @@ class SurfaceMapTests(unittest.TestCase):
         self.assertIn("cloud_credential_surface", report["rule_counts"])
         self.assertGreater(report["risk_score"], 25)
 
+    def test_catalog_profiles_and_database_rule(self):
+        report = scan(ROOT / "examples/mcp-catalog/postgres")
+        context = safe_install_context(report)
+
+        self.assertEqual(report["profile"]["name"], "Postgres MCP")
+        self.assertIn("database_credential_surface", report["rule_counts"])
+        self.assertTrue(any("database" in item.lower() for item in context["agent_context"]))
+
 
 class McpProtocolTests(unittest.TestCase):
     def call_server(self, messages):

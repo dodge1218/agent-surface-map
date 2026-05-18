@@ -1,0 +1,7 @@
+{
+  "id": "postgres",
+  "name": "Postgres MCP",
+  "family": "Database",
+  "why_use_it": "Lets an agent query application data or development databases.",
+  "pre_audit_note": "Use read-only database users, local replicas, query limits, and no production credentials by default."
+}

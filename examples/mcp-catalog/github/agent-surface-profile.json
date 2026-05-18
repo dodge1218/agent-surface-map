@@ -1,0 +1,7 @@
+{
+  "id": "github",
+  "name": "GitHub MCP",
+  "family": "Developer platform",
+  "why_use_it": "Lets an agent inspect repositories, issues, pull requests, CI output, and project metadata.",
+  "pre_audit_note": "Scope tokens tightly. Prefer read-only repository access until a workflow needs writes."
+}

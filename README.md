@@ -49,12 +49,28 @@ The demo server accepts simple public GitHub repository URLs, clones them with s
 ## Process
 
 See `docs/process.md` for the full web + MCP workflow.
+See `docs/catalog/preaudit-library.md` for the public MCP pre-audit template library.
 
 Short version:
 
 ```text
 link/path -> read-only scan -> redacted surface map -> Gemma review -> install context
 ```
+
+## Example MCP Library
+
+The UI includes pre-audit templates for common MCP installs:
+
+- Stealth Browser
+- GitHub
+- Gmail
+- Filesystem
+- Playwright
+- Fetch
+- Postgres
+- Memory + Shell
+
+These are representative install profiles, not upstream safety certifications. Each template is scanned into `public/preaudits/` and can be loaded into the verdict screen.
 
 ## Vercel
 

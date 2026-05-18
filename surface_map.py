@@ -116,6 +116,13 @@ PUBLIC_RULES = [
         "recommendation": "Pass cloud credentials only through scoped, audited mechanisms; never expose values to model context.",
     },
     {
+        "id": "database_connection_reference",
+        "category": "database_credential_surface",
+        "score": 6,
+        "pattern": re.compile(r"(DATABASE_URL|POSTGRES_URL|postgres://|mysql://|mongodb://|redis://|server-postgres|server-sqlite)", re.I),
+        "recommendation": "Use read-only database users, local replicas, query limits, and no production credentials by default.",
+    },
+    {
         "id": "prompt_override_language",
         "category": "prompt_injection_surface",
         "score": 6,
@@ -158,6 +165,8 @@ def safe_excerpt(line: str) -> str:
 
 def should_scan(path: Path) -> bool:
     if any(part in {".git", "node_modules", "vendor", "target", "__pycache__"} for part in path.parts):
+        return False
+    if path.name == "agent-surface-profile.json":
         return False
     return path.name in AGENT_FILES or path.suffix.lower() in {".md", ".json", ".toml", ".yml", ".yaml"}
 
@@ -228,7 +237,7 @@ def scan(root: Path) -> dict[str, Any]:
                     )
 
     risk_score = min(100, sum(RISK_WEIGHTS[f.category] for f in findings) + sum(rule["score"] for rule in rules))
-    return {
+    report = {
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "target": str(root),
         "scanned_files": scanned_files,
@@ -239,6 +248,13 @@ def scan(root: Path) -> dict[str, Any]:
         "rules": rules[:80],
         "gemma_review": None,
     }
+    profile_path = root / "agent-surface-profile.json"
+    if profile_path.exists():
+        try:
+            report["profile"] = json.loads(profile_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            report["profile"] = {"name": root.name}
+    return report
 
 
 def build_gemma_prompt(report: dict[str, Any]) -> str:
@@ -345,6 +361,8 @@ def agent_context(report: dict[str, Any]) -> list[str]:
         context.append("Do not expose Docker socket access to untrusted agent tools.")
     if "cluster_credential_surface" in rule_categories:
         context.append("Keep Kubernetes credentials outside untrusted agent workflows.")
+    if "database_credential_surface" in rule_categories:
+        context.append("Use read-only database users and avoid production credentials by default.")
     return context
 
 

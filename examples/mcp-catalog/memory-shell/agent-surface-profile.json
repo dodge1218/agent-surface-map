@@ -1,0 +1,7 @@
+{
+  "id": "memory-shell",
+  "name": "Memory + Shell MCP",
+  "family": "Local automation",
+  "why_use_it": "Represents MCPs that persist notes and run local helper commands.",
+  "pre_audit_note": "Terminal-capable tools need command allowlists, timeouts, sandboxing, and explicit approval."
+}

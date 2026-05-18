@@ -397,6 +397,93 @@ h3 {
   max-width: 100%;
 }
 
+.example-strip {
+  margin-top: 18px;
+  padding: 24px;
+  border: 1px solid rgba(27, 28, 31, 0.1);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 250, 242, 0.94)),
+    #fff;
+  box-shadow: 0 14px 34px rgba(49, 39, 27, 0.06);
+}
+
+.example-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.example-card {
+  min-height: 246px;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid rgba(27, 28, 31, 0.1);
+  background: #fff;
+  box-shadow: 0 10px 20px rgba(49, 39, 27, 0.04);
+}
+
+.example-topline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.example-topline span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.example-topline button {
+  border: 1px solid rgba(26, 115, 232, 0.24);
+  background: #e8f0fe;
+  color: var(--blue);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 6px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.example-card h3 {
+  margin: 0;
+  font-size: 1.02rem;
+}
+
+.example-card p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.example-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.example-card dl div {
+  display: grid;
+  gap: 2px;
+}
+
+.example-card dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.example-card dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
 .meta-label {
   color: var(--muted);
   text-transform: uppercase;
@@ -659,5 +746,15 @@ code {
     height: auto;
     align-items: flex-start;
     padding: 8px 0 16px;
+  }
+
+  .example-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .example-grid {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,0 +1,95 @@
+{
+  "generated_at": "2026-05-18T16:55:40Z",
+  "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/memory-shell",
+  "scanned_files": 2,
+  "risk_score": 32,
+  "category_counts": {
+    "shell_access": 3,
+    "secret_reference": 1
+  },
+  "rule_counts": {
+    "broad_filesystem_access": 2
+  },
+  "findings": [
+    {
+      "category": "shell_access",
+      "severity": "high",
+      "path": "README.md",
+      "line": 1,
+      "evidence": "# Memory + Shell MCP",
+      "recommendation": "Keep shell tools behind explicit approval, timeouts, and a narrow working directory."
+    },
+    {
+      "category": "shell_access",
+      "severity": "high",
+      "path": "mcp.json",
+      "line": 3,
+      "evidence": "\"memory-shell\": {",
+      "recommendation": "Keep shell tools behind explicit approval, timeouts, and a narrow working directory."
+    },
+    {
+      "category": "shell_access",
+      "severity": "high",
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"server.js\", \"--enable-shell\", \"--cwd\", \"/home/user/projects/demo\"],",
+      "recommendation": "Keep shell tools behind explicit approval, timeouts, and a narrow working directory."
+    },
+    {
+      "category": "secret_reference",
+      "severity": "medium",
+      "path": "mcp.json",
+      "line": 7,
+      "evidence": "\"MEMORY_STORE\": \"/home/user/.local/share/agent-memory.json\"",
+      "recommendation": "Reference secret names only in reports; never send values to model context."
+    }
+  ],
+  "rules": [
+    {
+      "id": "broad_filesystem_access",
+      "category": "broad_filesystem_access",
+      "severity": "high",
+      "score": 7,
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"server.js\", \"--enable-shell\", \"--cwd\", \"/home/user/projects/demo\"],",
+      "recommendation": "Do not grant home, root, or system paths to agent tools; mount only the project directory needed."
+    },
+    {
+      "id": "broad_filesystem_access",
+      "category": "broad_filesystem_access",
+      "severity": "high",
+      "score": 7,
+      "path": "mcp.json",
+      "line": 7,
+      "evidence": "\"MEMORY_STORE\": \"/home/user/.local/share/agent-memory.json\"",
+      "recommendation": "Do not grant home, root, or system paths to agent tools; mount only the project directory needed."
+    }
+  ],
+  "gemma_review": {
+    "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "top_risks": [
+      "shell access appeared 3 time(s).",
+      "broad filesystem access appeared 2 time(s).",
+      "secret reference appeared 1 time(s)."
+    ],
+    "quick_wins": [
+      "Run read-only before granting write access.",
+      "Document which MCP servers and browser profiles are allowed.",
+      "Keep secret values out of model context and reports."
+    ],
+    "hardening_plan": [
+      "Inventory agent config and instruction files.",
+      "Narrow shell, browser, network, and write permissions.",
+      "Re-run the scan and compare the risk score before shipping."
+    ]
+  },
+  "profile": {
+    "id": "memory-shell",
+    "name": "Memory + Shell MCP",
+    "family": "Local automation",
+    "why_use_it": "Represents MCPs that persist notes and run local helper commands.",
+    "pre_audit_note": "Terminal-capable tools need command allowlists, timeouts, sandboxing, and explicit approval."
+  },
+  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 32,\n  \"category_counts\": {\n    \"shell_access\": 3,\n    \"secret_reference\": 1\n  },\n  \"rule_counts\": {\n    \"broad_filesystem_access\": 2\n  },\n  \"findings\": [\n    {\n      \"category\": \"shell_access\",\n      \"severity\": \"high\",\n      \"path\": \"README.md\",\n      \"line\": 1,\n      \"evidence\": \"# Memory + Shell MCP\",\n      \"recommendation\": \"Keep shell tools behind explicit approval, timeouts, and a narrow working directory.\"\n    },\n    {\n      \"category\": \"shell_access\",\n      \"severity\": \"high\",\n      \"path\": \"mcp.json\",\n      \"line\": 3,\n      \"evidence\": \"\\\"memory-shell\\\": {\",\n      \"recommendation\": \"Keep shell tools behind explicit approval, timeouts, and a narrow working directory.\"\n    },\n    {\n      \"category\": \"shell_access\",\n      \"severity\": \"high\",\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"server.js\\\", \\\"--enable-shell\\\", \\\"--cwd\\\", \\\"/home/user/projects/demo\\\"],\",\n      \"recommendation\": \"Keep shell tools behind explicit approval, timeouts, and a narrow working directory.\"\n    },\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"MEMORY_STORE\\\": \\\"/home/user/.local/share/agent-memory.json\\\"\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"id\": \"broad_filesystem_access\",\n      \"category\": \"broad_filesystem_access\",\n      \"severity\": \"high\",\n      \"score\": 7,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"server.js\\\", \\\"--enable-shell\\\", \\\"--cwd\\\", \\\"/home/user/projects/demo\\\"],\",\n      \"recommendation\": \"Do not grant home, root, or system paths to agent tools; mount only the project directory needed.\"\n    },\n    {\n      \"id\": \"broad_filesystem_access\",\n      \"category\": \"broad_filesystem_access\",\n      \"severity\": \"high\",\n      \"score\": 7,\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"MEMORY_STORE\\\": \\\"/home/user/.local/share/agent-memory.json\\\"\",\n      \"recommendation\": \"Do not grant home, root, or system paths to agent tools; mount only the project directory needed.\"\n    }\n  ]\n}"
+}

@@ -1,0 +1,87 @@
+{
+  "generated_at": "2026-05-18T16:55:41Z",
+  "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/playwright",
+  "scanned_files": 2,
+  "risk_score": 25,
+  "category_counts": {
+    "browser_access": 3
+  },
+  "rule_counts": {
+    "broad_filesystem_access": 1,
+    "browser_session_surface": 1
+  },
+  "findings": [
+    {
+      "category": "browser_access",
+      "severity": "medium",
+      "path": "README.md",
+      "line": 1,
+      "evidence": "# Playwright MCP",
+      "recommendation": "Separate logged-in browser profiles from agent browsing and document which sites are allowed."
+    },
+    {
+      "category": "browser_access",
+      "severity": "medium",
+      "path": "mcp.json",
+      "line": 3,
+      "evidence": "\"playwright\": {",
+      "recommendation": "Separate logged-in browser profiles from agent browsing and document which sites are allowed."
+    },
+    {
+      "category": "browser_access",
+      "severity": "medium",
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"-y\", \"@playwright/mcp\", \"--user-data-dir\", \"/home/user/.cache/ms-playwright/profile\"]",
+      "recommendation": "Separate logged-in browser profiles from agent browsing and document which sites are allowed."
+    }
+  ],
+  "rules": [
+    {
+      "id": "broad_filesystem_access",
+      "category": "broad_filesystem_access",
+      "severity": "high",
+      "score": 7,
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"-y\", \"@playwright/mcp\", \"--user-data-dir\", \"/home/user/.cache/ms-playwright/profile\"]",
+      "recommendation": "Do not grant home, root, or system paths to agent tools; mount only the project directory needed."
+    },
+    {
+      "id": "browser_profile_reuse",
+      "category": "browser_session_surface",
+      "severity": "medium",
+      "score": 6,
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"-y\", \"@playwright/mcp\", \"--user-data-dir\", \"/home/user/.cache/ms-playwright/profile\"]",
+      "recommendation": "Use a clean browser profile for agent tools; do not reuse personal logged-in sessions."
+    }
+  ],
+  "gemma_review": {
+    "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "top_risks": [
+      "browser access appeared 3 time(s).",
+      "broad filesystem access appeared 1 time(s).",
+      "browser session surface appeared 1 time(s)."
+    ],
+    "quick_wins": [
+      "Run read-only before granting write access.",
+      "Document which MCP servers and browser profiles are allowed.",
+      "Keep secret values out of model context and reports."
+    ],
+    "hardening_plan": [
+      "Inventory agent config and instruction files.",
+      "Narrow shell, browser, network, and write permissions.",
+      "Re-run the scan and compare the risk score before shipping."
+    ]
+  },
+  "profile": {
+    "id": "playwright",
+    "name": "Playwright MCP",
+    "family": "Browser automation",
+    "why_use_it": "Lets an agent open pages, click, type, screenshot, and inspect browser state.",
+    "pre_audit_note": "Browser tools should use clean profiles, site allowlists, and visible approval for credentialed actions."
+  },
+  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 2,\n  \"risk_score\": 25,\n  \"category_counts\": {\n    \"browser_access\": 3\n  },\n  \"rule_counts\": {\n    \"broad_filesystem_access\": 1,\n    \"browser_session_surface\": 1\n  },\n  \"findings\": [\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"README.md\",\n      \"line\": 1,\n      \"evidence\": \"# Playwright MCP\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 3,\n      \"evidence\": \"\\\"playwright\\\": {\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@playwright/mcp\\\", \\\"--user-data-dir\\\", \\\"/home/user/.cache/ms-playwright/profile\\\"]\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"id\": \"broad_filesystem_access\",\n      \"category\": \"broad_filesystem_access\",\n      \"severity\": \"high\",\n      \"score\": 7,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@playwright/mcp\\\", \\\"--user-data-dir\\\", \\\"/home/user/.cache/ms-playwright/profile\\\"]\",\n      \"recommendation\": \"Do not grant home, root, or system paths to agent tools; mount only the project directory needed.\"\n    },\n    {\n      \"id\": \"browser_profile_reuse\",\n      \"category\": \"browser_session_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@playwright/mcp\\\", \\\"--user-data-dir\\\", \\\"/home/user/.cache/ms-playwright/profile\\\"]\",\n      \"recommendation\": \"Use a clean browser profile for agent tools; do not reuse personal logged-in sessions.\"\n    }\n  ]\n}"
+}

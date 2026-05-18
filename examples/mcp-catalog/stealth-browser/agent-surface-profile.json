@@ -1,0 +1,7 @@
+{
+  "id": "stealth-browser",
+  "name": "Stealth Browser MCP",
+  "family": "Browser automation",
+  "why_use_it": "Lets an agent inspect web apps, logged-in portals, screenshots, DOM state, cookies, storage, and network requests.",
+  "pre_audit_note": "Useful but sensitive. Use a clean browser profile, scoped sites, and no personal sessions."
+}

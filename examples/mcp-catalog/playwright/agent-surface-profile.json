@@ -1,0 +1,7 @@
+{
+  "id": "playwright",
+  "name": "Playwright MCP",
+  "family": "Browser automation",
+  "why_use_it": "Lets an agent open pages, click, type, screenshot, and inspect browser state.",
+  "pre_audit_note": "Browser tools should use clean profiles, site allowlists, and visible approval for credentialed actions."
+}
