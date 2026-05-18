@@ -33,6 +33,12 @@ The goal is simple: before you give a coding agent a new tool, know what that to
 
 The web demo shows a scan of a sample agent stack. It includes a verdict, risk score, Gemma-generated review, risk signals, and safe workflow notes.
 
+Live demo:
+
+```text
+https://gemma-agent-surface-map.vercel.app
+```
+
 Run it locally:
 
 ```bash
@@ -58,11 +64,13 @@ Repository:
 https://github.com/dodge1218/agent-surface-map
 ```
 
-Live demo:
+Key implementation pieces:
 
-```text
-https://gemma-agent-surface-map.vercel.app
-```
+- `surface_map.py` — deterministic local scanner and Gemma prompt builder
+- `server.py` — local web/API demo server
+- `api/scan.py` — Vercel serverless scanner endpoint
+- `mcp_server.py` — stdio MCP server for coding-agent workflows
+- `tests/test_surface_map.py` — scanner and MCP protocol tests
 
 ## How I Used Gemma 4
 
@@ -79,6 +87,31 @@ Gemma 4 is the judgment layer. The deterministic scanner finds evidence, but Gem
 I would use Gemma 4 31B Dense for the final review because the task needs nuanced security reasoning and prioritization more than tiny-device latency. Smaller Gemma 4 variants are a good fit for inline local checks, but the 31B model is the better reviewer for turning messy tool access into a practical add/sandbox/reject decision.
 
 The model is not trusted with raw secrets and does not run commands. It explains a local scan that already happened.
+
+## Safety Design
+
+The scanner is intentionally conservative:
+
+- it does not execute repository code
+- GitHub scans use shallow/no-submodule retrieval
+- secret-looking values are redacted before review
+- local MCP scans refuse filesystem root and obvious credential/profile directories
+- MCP output includes workflow constraints for the calling agent
+
+That matters because the product is about evaluating untrusted agent tools. The evaluator should not become another unsafe agent tool.
+
+## Verification
+
+I tested the scanner, MCP protocol flow, and deployed API:
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py
+node --check public/app.js
+curl -X POST https://gemma-agent-surface-map.vercel.app/api/scan \
+  -H 'content-type: application/json' \
+  -d '{"url":"https://github.com/octocat/Hello-World"}'
+```
 
 ## Why It Matters
 
