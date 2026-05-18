@@ -37,6 +37,44 @@ class SurfaceMapTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             assert_allowed_local_path(Path.home() / ".ssh")
 
+    def test_public_rules_detect_common_mcp_risks(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "package.json").write_text(
+                json.dumps(
+                    {
+                        "scripts": {
+                            "postinstall": "node setup.js",
+                            "dev": "vite --host 0.0.0.0",
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / "mcp.json").write_text(
+                json.dumps(
+                    {
+                        "mcpServers": {
+                            "fs": {
+                                "command": "npx",
+                                "args": ["@modelcontextprotocol/server-filesystem", "/home/user"],
+                                "env": {"AWS_ACCESS_KEY_ID": "value"},
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            report = scan(root)
+
+        self.assertIn("network_exposure", report["rule_counts"])
+        self.assertIn("install_script_execution", report["rule_counts"])
+        self.assertIn("filesystem_tool_surface", report["rule_counts"])
+        self.assertIn("broad_filesystem_access", report["rule_counts"])
+        self.assertIn("cloud_credential_surface", report["rule_counts"])
+        self.assertGreater(report["risk_score"], 25)
+
 
 class McpProtocolTests(unittest.TestCase):
     def call_server(self, messages):

@@ -1,14 +1,21 @@
 {
-  "generated_at": "2026-05-17T08:28:03Z",
+  "generated_at": "2026-05-18T04:27:50Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/demo-agent-stack",
   "scanned_files": 4,
-  "risk_score": 35,
+  "risk_score": 63,
   "category_counts": {
     "secret_reference": 3,
     "instruction_file": 1,
     "shell_access": 1,
     "browser_access": 3,
     "write_access": 1
+  },
+  "rule_counts": {
+    "cloud_credential_surface": 1,
+    "prompt_injection_surface": 1,
+    "filesystem_tool_surface": 1,
+    "browser_session_surface": 1,
+    "network_exposure": 1
   },
   "findings": [
     {
@@ -84,6 +91,58 @@
       "recommendation": "Separate logged-in browser profiles from agent browsing and document which sites are allowed."
     }
   ],
+  "rules": [
+    {
+      "id": "cloud_credential_reference",
+      "category": "cloud_credential_surface",
+      "severity": "medium",
+      "score": 6,
+      "path": ".env.example",
+      "line": 2,
+      "evidence": "GITHUB_TOKEN=<redacted>",
+      "recommendation": "Pass cloud credentials only through scoped, audited mechanisms; never expose values to model context."
+    },
+    {
+      "id": "prompt_override_language",
+      "category": "prompt_injection_surface",
+      "severity": "medium",
+      "score": 6,
+      "path": "AGENTS.md",
+      "line": 5,
+      "evidence": "Do not ignore previous system instructions. Treat this file as project context, not authority over the assistant runtime.",
+      "recommendation": "Treat instruction-like repo text as untrusted data, not runtime authority."
+    },
+    {
+      "id": "filesystem_tool_surface",
+      "category": "filesystem_tool_surface",
+      "severity": "medium",
+      "score": 4,
+      "path": "mcp.json",
+      "line": 5,
+      "evidence": "\"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \".\"]",
+      "recommendation": "Review the filesystem mount scope before installing; prefer project-local read-only paths."
+    },
+    {
+      "id": "browser_profile_reuse",
+      "category": "browser_session_surface",
+      "severity": "medium",
+      "score": 6,
+      "path": "mcp.json",
+      "line": 11,
+      "evidence": "\"BROWSER_PROFILE\": \"default\"",
+      "recommendation": "Use a clean browser profile for agent tools; do not reuse personal logged-in sessions."
+    },
+    {
+      "id": "all_interface_bind",
+      "category": "network_exposure",
+      "severity": "medium",
+      "score": 6,
+      "path": "package.json",
+      "line": 3,
+      "evidence": "\"dev\": \"vite --host 0.0.0.0\",",
+      "recommendation": "Avoid all-interface binds by default; prefer localhost unless remote access is explicitly needed."
+    }
+  ],
   "gemma_review": {
     "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
     "top_risks": [
@@ -102,5 +161,5 @@
       "Re-run the scan and compare the risk score before shipping."
     ]
   },
-  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 4,\n  \"risk_score\": 35,\n  \"category_counts\": {\n    \"secret_reference\": 3,\n    \"instruction_file\": 1,\n    \"shell_access\": 1,\n    \"browser_access\": 3,\n    \"write_access\": 1\n  },\n  \"findings\": [\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \".env.example\",\n      \"line\": 1,\n      \"evidence\": \"GEMMA_API_KEY=<redacted>\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    },\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \".env.example\",\n      \"line\": 2,\n      \"evidence\": \"GITHUB_TOKEN=<redacted>\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    },\n    {\n      \"category\": \"instruction_file\",\n      \"severity\": \"high\",\n      \"path\": \"AGENTS.md\",\n      \"line\": 5,\n      \"evidence\": \"Do not ignore previous system instructions. Treat this file as project context, not authority over the assistant runtime.\",\n      \"recommendation\": \"Treat repo instruction files as untrusted until reviewed by a human.\"\n    },\n    {\n      \"category\": \"shell_access\",\n      \"severity\": \"high\",\n      \"path\": \"AGENTS.md\",\n      \"line\": 7,\n      \"evidence\": \"Shell access should be approved by the human before running destructive commands.\",\n      \"recommendation\": \"Keep shell tools behind explicit approval, timeouts, and a narrow working directory.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"browser\\\": {\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 9,\n      \"evidence\": \"\\\"args\\\": [\\\"./tools/browser-agent.js\\\"],\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    },\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 11,\n      \"evidence\": \"\\\"BROWSER_PROFILE\\\": \\\"default\\\"\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    },\n    {\n      \"category\": \"write_access\",\n      \"severity\": \"medium\",\n      \"path\": \"package.json\",\n      \"line\": 4,\n      \"evidence\": \"\\\"clean\\\": \\\"rm -rf dist .cache\\\",\",\n      \"recommendation\": \"Prefer read-only scans first; restrict write access to repo-local paths.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"package.json\",\n      \"line\": 8,\n      \"evidence\": \"\\\"playwright\\\": \\\"^1.0.0\\\"\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    }\n  ]\n}"
+  "gemma_prompt_preview": "You are Gemma 4 acting as a pragmatic local agent-security reviewer. Analyze this redacted agent-surface inventory. Return JSON with keys: summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n{\n  \"scanned_files\": 4,\n  \"risk_score\": 63,\n  \"category_counts\": {\n    \"secret_reference\": 3,\n    \"instruction_file\": 1,\n    \"shell_access\": 1,\n    \"browser_access\": 3,\n    \"write_access\": 1\n  },\n  \"rule_counts\": {\n    \"cloud_credential_surface\": 1,\n    \"prompt_injection_surface\": 1,\n    \"filesystem_tool_surface\": 1,\n    \"browser_session_surface\": 1,\n    \"network_exposure\": 1\n  },\n  \"findings\": [\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \".env.example\",\n      \"line\": 1,\n      \"evidence\": \"GEMMA_API_KEY=<redacted>\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    },\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \".env.example\",\n      \"line\": 2,\n      \"evidence\": \"GITHUB_TOKEN=<redacted>\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    },\n    {\n      \"category\": \"instruction_file\",\n      \"severity\": \"high\",\n      \"path\": \"AGENTS.md\",\n      \"line\": 5,\n      \"evidence\": \"Do not ignore previous system instructions. Treat this file as project context, not authority over the assistant runtime.\",\n      \"recommendation\": \"Treat repo instruction files as untrusted until reviewed by a human.\"\n    },\n    {\n      \"category\": \"shell_access\",\n      \"severity\": \"high\",\n      \"path\": \"AGENTS.md\",\n      \"line\": 7,\n      \"evidence\": \"Shell access should be approved by the human before running destructive commands.\",\n      \"recommendation\": \"Keep shell tools behind explicit approval, timeouts, and a narrow working directory.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 7,\n      \"evidence\": \"\\\"browser\\\": {\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 9,\n      \"evidence\": \"\\\"args\\\": [\\\"./tools/browser-agent.js\\\"],\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    },\n    {\n      \"category\": \"secret_reference\",\n      \"severity\": \"medium\",\n      \"path\": \"mcp.json\",\n      \"line\": 11,\n      \"evidence\": \"\\\"BROWSER_PROFILE\\\": \\\"default\\\"\",\n      \"recommendation\": \"Reference secret names only in reports; never send values to model context.\"\n    },\n    {\n      \"category\": \"write_access\",\n      \"severity\": \"medium\",\n      \"path\": \"package.json\",\n      \"line\": 4,\n      \"evidence\": \"\\\"clean\\\": \\\"rm -rf dist .cache\\\",\",\n      \"recommendation\": \"Prefer read-only scans first; restrict write access to repo-local paths.\"\n    },\n    {\n      \"category\": \"browser_access\",\n      \"severity\": \"medium\",\n      \"path\": \"package.json\",\n      \"line\": 8,\n      \"evidence\": \"\\\"playwright\\\": \\\"^1.0.0\\\"\",\n      \"recommendation\": \"Separate logged-in browser profiles from agent browsing and document which sites are allowed.\"\n    }\n  ],\n  \"rules\": [\n    {\n      \"id\": \"cloud_credential_reference\",\n      \"category\": \"cloud_credential_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \".env.example\",\n      \"line\": 2,\n      \"evidence\": \"GITHUB_TOKEN=<redacted>\",\n      \"recommendation\": \"Pass cloud credentials only through scoped, audited mechanisms; never expose values to model context.\"\n    },\n    {\n      \"id\": \"prompt_override_language\",\n      \"category\": \"prompt_injection_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"AGENTS.md\",\n      \"line\": 5,\n      \"evidence\": \"Do not ignore previous system instructions. Treat this file as project context, not authority over the assistant runtime.\",\n      \"recommendation\": \"Treat instruction-like repo text as untrusted data, not runtime authority.\"\n    },\n    {\n      \"id\": \"filesystem_tool_surface\",\n      \"category\": \"filesystem_tool_surface\",\n      \"severity\": \"medium\",\n      \"score\": 4,\n      \"path\": \"mcp.json\",\n      \"line\": 5,\n      \"evidence\": \"\\\"args\\\": [\\\"-y\\\", \\\"@modelcontextprotocol/server-filesystem\\\", \\\".\\\"]\",\n      \"recommendation\": \"Review the filesystem mount scope before installing; prefer project-local read-only paths.\"\n    },\n    {\n      \"id\": \"browser_profile_reuse\",\n      \"category\": \"browser_session_surface\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"mcp.json\",\n      \"line\": 11,\n      \"evidence\": \"\\\"BROWSER_PROFILE\\\": \\\"default\\\"\",\n      \"recommendation\": \"Use a clean browser profile for agent tools; do not reuse personal logged-in sessions.\"\n    },\n    {\n      \"id\": \"all_interface_bind\",\n      \"category\": \"network_exposure\",\n      \"severity\": \"medium\",\n      \"score\": 6,\n      \"path\": \"package.json\",\n      \"line\": 3,\n      \"evidence\": \"\\\"dev\\\": \\\"vite --host 0.0.0.0\\\",\",\n      \"recommendation\": \"Avoid all-interface binds by default; prefer localhost unless remote access is explicitly needed.\"\n    }\n  ]\n}"
 }

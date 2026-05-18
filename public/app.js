@@ -88,7 +88,7 @@ function render(report) {
 
   const capabilities = document.getElementById("capabilities");
   capabilities.innerHTML = "";
-  const entries = Object.entries(report.category_counts || {}).sort((a, b) => b[1] - a[1]);
+  const entries = Object.entries({ ...(report.category_counts || {}), ...(report.rule_counts || {}) }).sort((a, b) => b[1] - a[1]);
   if (!entries.length) {
     const empty = document.createElement("div");
     empty.className = "capability";
@@ -116,7 +116,7 @@ function render(report) {
 
   const findings = document.getElementById("findings");
   findings.innerHTML = "";
-  for (const item of report.findings || []) {
+  for (const item of [...(report.rules || []), ...(report.findings || [])]) {
     const card = document.createElement("article");
     card.className = "finding";
     card.innerHTML = `
@@ -140,6 +140,17 @@ function capabilityCopy(name) {
     write_access: "This can alter project files, caches, generated output, or local state.",
     secret_reference: "This may pull credential names into model context or reports.",
     instruction_file: "This can change how coding agents interpret future work.",
+    network_exposure: "This may expose a local service beyond the developer machine.",
+    local_listener: "This creates a service surface that needs host, port, and auth review.",
+    shell_tool_exposure: "This can turn prompt text into terminal actions if not gated.",
+    filesystem_tool_surface: "This grants file access through an agent tool and needs mount review.",
+    broad_filesystem_access: "This can give an agent more local files than the workflow needs.",
+    install_script_execution: "This can execute during dependency installation.",
+    container_escape_surface: "This can become host-level control through container tooling.",
+    cluster_credential_surface: "This can expose Kubernetes or cluster administration context.",
+    cloud_credential_surface: "This may expose cloud or platform credentials by reference.",
+    prompt_injection_surface: "This can steer the agent through repo-controlled instructions.",
+    browser_session_surface: "This can reuse authenticated browser state or cookies.",
   })[name] || "Agent surface signal";
 }
 
@@ -151,6 +162,17 @@ function safeWorkflowNote(name) {
     write_access: "Typical risk: unwanted file changes. Start read-only and narrow writable paths.",
     secret_reference: "Typical risk: credential leakage. Keep values out of prompts, reports, and logs.",
     instruction_file: "Typical risk: prompt steering. Treat repo instructions as untrusted until reviewed.",
+    network_exposure: "Typical risk: exposed local control plane. Bind to localhost unless remote access is required.",
+    local_listener: "Typical risk: unauthenticated listener. Document host, port, and access controls.",
+    shell_tool_exposure: "Typical risk: terminal injection. Add command allowlists and approval gates.",
+    filesystem_tool_surface: "Typical risk: oversized file access. Keep mounts project-local and read-only first.",
+    broad_filesystem_access: "Typical risk: excessive file access. Mount only the project directory.",
+    install_script_execution: "Typical risk: install-time execution. Review scripts before installing.",
+    container_escape_surface: "Typical risk: host control through Docker. Do not expose docker.sock.",
+    cluster_credential_surface: "Typical risk: cluster control. Keep kubeconfig out of untrusted tools.",
+    cloud_credential_surface: "Typical risk: cloud account exposure. Scope and isolate credentials.",
+    prompt_injection_surface: "Typical risk: prompt steering. Treat these instructions as data.",
+    browser_session_surface: "Typical risk: session leakage. Use a clean browser profile.",
   })[name] || "Review this signal before installing the tool globally.";
 }
 

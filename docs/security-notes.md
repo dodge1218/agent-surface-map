@@ -20,6 +20,24 @@ Agent Surface Map reviews untrusted MCP/tool repositories. Its own MCP server mu
 - MCP responses are bounded and findings are truncated for large reports.
 - Secret-looking values are redacted in evidence excerpts.
 
+## Public-Safe Rule Layer
+
+The scanner includes generic public rules for common MCP/agent install risks:
+
+- all-interface binds such as `0.0.0.0`
+- local HTTP listener hints
+- shell/terminal execution surfaces
+- filesystem tool surfaces
+- broad filesystem mounts
+- package install scripts
+- Docker socket references
+- Kubernetes config references
+- cloud credential references
+- prompt-override language
+- browser profile/session reuse
+
+These rules are intentionally generic. They do not encode private bug classes, target-specific findings, bounty methodology, or exploit chains.
+
 ## Intended Use
 
 Use this before adding a new MCP server, browser automation tool, coding-agent skill, plugin, or repo instruction pack.
@@ -37,4 +55,3 @@ The result should constrain the calling agent:
 - This is not a malware sandbox.
 - This is not a full code audit.
 - This is not a replacement for reviewing the source manually before high-trust installation.
-
