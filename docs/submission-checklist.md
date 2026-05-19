@@ -9,6 +9,8 @@
 - [ ] Explains web flow and MCP flow.
 - [ ] Explains why Gemma 4 is central.
 - [ ] Mentions model choice: Gemma 4 31B Dense for final install review.
+- [ ] Explains `review_source` honestly for Gemma vs fallback.
+- [ ] Mentions pre-audited MCP examples.
 - [ ] Includes verification commands.
 - [ ] Includes no private OpenClaw/CyberClaw/bounty details.
 
@@ -19,6 +21,7 @@
 - [ ] Invalid URL returns a readable error.
 - [ ] Gemma verdict panel is visually obvious.
 - [ ] MCP workflow is visible on the page.
+- [ ] Pre-audit library cards load reports into the same verdict screen.
 
 ## Code
 
@@ -34,4 +37,3 @@
 - [ ] MCP local scan refuses root/profile/credential directories.
 - [ ] GitHub scans use shallow/no-submodule/no-hook retrieval.
 - [ ] MCP response includes install constraints.
-

@@ -102,6 +102,8 @@ Gemma 4 is central because the hard part is not collecting files. The hard part 
 
 The app uses deterministic scanning for trust and Gemma 4 for judgment, prioritization, and plain-English guidance.
 
+See `docs/judging-map.md` for the build mapped directly to the challenge criteria.
+
 ## MCP Workflow
 
 The web app is the quick check. The MCP server is the developer-workflow integration.

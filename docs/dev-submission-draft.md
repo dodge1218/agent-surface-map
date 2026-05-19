@@ -31,7 +31,7 @@ The goal is simple: before you give a coding agent a new tool, know what that to
 
 ## Demo
 
-The web demo shows a scan of a sample agent stack. It includes a verdict, risk score, Gemma-generated review, risk signals, and safe workflow notes.
+The web demo shows a scan of a sample agent stack. It includes a verdict, risk score, review source, risk signals, pre-audited MCP templates, and safe workflow notes.
 
 Live demo:
 
@@ -76,7 +76,7 @@ Key implementation pieces:
 
 The deterministic scanner is intentionally boring: it walks local files, detects agent-surface signals, and redacts secret values.
 
-Gemma 4 is the judgment layer. The deterministic scanner finds evidence, but Gemma 4 makes the install call. It receives a compact, redacted inventory and returns a structured review with:
+Gemma 4 is the intended judgment layer. The deterministic scanner finds evidence; Gemma receives a compact, redacted inventory and returns a structured review with:
 
 - summary
 - top risks
@@ -86,7 +86,22 @@ Gemma 4 is the judgment layer. The deterministic scanner finds evidence, but Gem
 
 I would use Gemma 4 31B Dense for the final review because the task needs nuanced security reasoning and prioritization more than tiny-device latency. Smaller Gemma 4 variants are a good fit for inline local checks, but the 31B model is the better reviewer for turning messy tool access into a practical add/sandbox/reject decision.
 
-The model is not trusted with raw secrets and does not run commands. It explains a local scan that already happened.
+The model is not trusted with raw secrets and does not run commands. It explains a local scan that already happened. When no Gemma endpoint is configured, the app clearly labels the deterministic fallback with `review_source: "fallback"` instead of pretending the review came from the model.
+
+## Pre-Audited MCP Library
+
+The demo includes a small library of common MCP install profiles:
+
+- Stealth Browser
+- GitHub
+- Gmail
+- Filesystem
+- Playwright
+- Fetch
+- Postgres
+- Memory + Shell
+
+Each card loads a generated report into the same verdict screen. The point is not to certify those upstream tools. The point is to show the workflow developers need before adding high-trust tools to an agent.
 
 ## Safety Design
 
