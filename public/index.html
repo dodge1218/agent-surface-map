@@ -76,6 +76,42 @@
         <code>scan_github_tool(url) -> install_context -> safe agent constraints</code>
       </section>
 
+      <section class="checks-strip" aria-label="Scanner checks">
+        <div class="section-heading">
+          <div>
+            <span class="meta-label">What gets checked</span>
+            <h2>Install-facing signals, not a full source audit</h2>
+          </div>
+          <span class="count-pill">read-only</span>
+        </div>
+        <div class="checks-grid">
+          <article>
+            <strong>MCP config</strong>
+            <p>Parses server names, commands, args, env key names, and risk hints.</p>
+          </article>
+          <article>
+            <strong>Shell access</strong>
+            <p>Flags terminal/process surfaces that need approval gates and isolation.</p>
+          </article>
+          <article>
+            <strong>Browser sessions</strong>
+            <p>Looks for browser automation and profile reuse that could expose cookies.</p>
+          </article>
+          <article>
+            <strong>Filesystems</strong>
+            <p>Highlights broad local paths, filesystem MCPs, and oversized mounts.</p>
+          </article>
+          <article>
+            <strong>Credentials</strong>
+            <p>Records secret-adjacent key names while redacting values from reports.</p>
+          </article>
+          <article>
+            <strong>Agent instructions</strong>
+            <p>Treats repo instruction files and prompt-override text as untrusted context.</p>
+          </article>
+        </div>
+      </section>
+
       <section class="example-strip" aria-label="Pre-audited MCP examples">
         <div class="section-heading">
           <div>

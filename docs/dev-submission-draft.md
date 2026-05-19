@@ -20,6 +20,8 @@ Paste repo. Scanner checks risk. Gemma explains. Agent installs safer.
 
 The scanner inventories the agent operating surface, redacts secret-adjacent data, and uses Gemma 4 to turn that inventory into an install decision:
 
+- which MCP servers are declared
+- which commands, args, and env key names appear
 - what the agent can execute
 - what it can write
 - where browser automation appears

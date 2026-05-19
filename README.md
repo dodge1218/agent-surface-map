@@ -57,6 +57,7 @@ https://github.com/dodge1218/agent-surface-demo-mcp
 
 See `docs/process.md` for the full web + MCP workflow.
 See `docs/catalog/preaudit-library.md` for the public MCP pre-audit template library.
+See `docs/rules.md` for the public rule catalog.
 
 Short version:
 

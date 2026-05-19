@@ -42,6 +42,8 @@ The scanner includes generic public rules for common MCP/agent install risks:
 
 These rules are intentionally generic. They do not encode private bug classes, target-specific findings, bounty methodology, or exploit chains.
 
+See `docs/rules.md` for the public rule catalog.
+
 ## Intended Use
 
 Use this before adding a new MCP server, browser automation tool, coding-agent skill, plugin, or repo instruction pack.
