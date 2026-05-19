@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T17:02:31Z",
+  "generated_at": "2026-05-19T19:50:52Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/github",
   "scanned_files": 2,
   "risk_score": 9,
@@ -9,6 +9,24 @@
   "rule_counts": {
     "cloud_credential_surface": 1
   },
+  "mcp_servers": [
+    {
+      "name": "github",
+      "path": "mcp.json",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env_keys": [
+        "GITHUB_TOKEN"
+      ],
+      "risk_hints": [
+        "package runner",
+        "credential reference"
+      ]
+    }
+  ],
   "findings": [
     {
       "category": "secret_reference",

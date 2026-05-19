@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T17:02:32Z",
+  "generated_at": "2026-05-19T19:50:54Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/gmail",
   "scanned_files": 2,
   "risk_score": 19,
@@ -10,6 +10,24 @@
     "broad_filesystem_access": 1,
     "cloud_credential_surface": 1
   },
+  "mcp_servers": [
+    {
+      "name": "gmail",
+      "path": "mcp.json",
+      "command": "node",
+      "args": [
+        "dist/gmail-mcp.js"
+      ],
+      "env_keys": [
+        "GMAIL_REFRESH_TOKEN",
+        "GOOGLE_APPLICATION_CREDENTIALS"
+      ],
+      "risk_hints": [
+        "local process",
+        "credential reference"
+      ]
+    }
+  ],
   "findings": [
     {
       "category": "secret_reference",

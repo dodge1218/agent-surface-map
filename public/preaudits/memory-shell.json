@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T17:02:33Z",
+  "generated_at": "2026-05-19T19:50:54Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/memory-shell",
   "scanned_files": 2,
   "risk_score": 32,
@@ -10,6 +10,26 @@
   "rule_counts": {
     "broad_filesystem_access": 2
   },
+  "mcp_servers": [
+    {
+      "name": "memory-shell",
+      "path": "mcp.json",
+      "command": "node",
+      "args": [
+        "server.js",
+        "--enable-shell",
+        "--cwd",
+        "/home/user/projects/demo"
+      ],
+      "env_keys": [
+        "MEMORY_STORE"
+      ],
+      "risk_hints": [
+        "local process",
+        "broad filesystem path"
+      ]
+    }
+  ],
   "findings": [
     {
       "category": "shell_access",

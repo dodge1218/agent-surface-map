@@ -26,6 +26,29 @@ class SurfaceMapTests(unittest.TestCase):
         self.assertNotIn("abc123", evidence)
         self.assertIn("shell_access", report["category_counts"])
 
+    def test_redacts_url_credentials_in_args(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "mcp.json").write_text(
+                json.dumps(
+                    {
+                        "mcpServers": {
+                            "db": {
+                                "command": "node",
+                                "args": ["postgres://user:super-secret@localhost:5432/app"],
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            report = scan(root)
+
+        encoded = json.dumps(report)
+        self.assertIn("postgres://user:<redacted>@localhost:5432/app", encoded)
+        self.assertNotIn("super-secret", encoded)
+
     def test_install_context_sandbox_first_for_demo_stack(self):
         report = scan(ROOT / "examples/demo-agent-stack")
         context = safe_install_context(report)
@@ -73,6 +96,10 @@ class SurfaceMapTests(unittest.TestCase):
         self.assertIn("filesystem_tool_surface", report["rule_counts"])
         self.assertIn("broad_filesystem_access", report["rule_counts"])
         self.assertIn("cloud_credential_surface", report["rule_counts"])
+        self.assertEqual(report["mcp_servers"][0]["name"], "fs")
+        self.assertIn("credential reference", report["mcp_servers"][0]["risk_hints"])
+        self.assertIn("broad filesystem path", report["mcp_servers"][0]["risk_hints"])
+        self.assertEqual(safe_install_context(report)["mcp_servers"][0]["name"], "fs")
         self.assertGreater(report["risk_score"], 25)
 
     def test_catalog_profiles_and_database_rule(self):
@@ -80,6 +107,8 @@ class SurfaceMapTests(unittest.TestCase):
         context = safe_install_context(report)
 
         self.assertEqual(report["profile"]["name"], "Postgres MCP")
+        self.assertEqual(report["mcp_servers"][0]["name"], "postgres")
+        self.assertIn("database access", report["mcp_servers"][0]["risk_hints"])
         self.assertIn("database_credential_surface", report["rule_counts"])
         self.assertTrue(any("database" in item.lower() for item in context["agent_context"]))
 

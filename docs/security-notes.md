@@ -21,6 +21,7 @@ Agent Surface Map reviews untrusted MCP/tool repositories. Its own MCP server mu
 - Secret-looking values are redacted in evidence excerpts.
 - Gemma calls receive only the redacted surface map, not raw repository contents or secret values.
 - Gemma failure does not block scanning; reports fall back to deterministic local review.
+- MCP config parsing records env key names only, not env values.
 
 ## Public-Safe Rule Layer
 

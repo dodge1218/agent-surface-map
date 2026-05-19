@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T17:02:34Z",
+  "generated_at": "2026-05-19T19:50:56Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/postgres",
   "scanned_files": 2,
   "risk_score": 15,
@@ -9,13 +9,32 @@
   "rule_counts": {
     "database_credential_surface": 2
   },
+  "mcp_servers": [
+    {
+      "name": "postgres",
+      "path": "mcp.json",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres"
+      ],
+      "env_keys": [
+        "DATABASE_URL"
+      ],
+      "risk_hints": [
+        "package runner",
+        "credential reference",
+        "database access"
+      ]
+    }
+  ],
   "findings": [
     {
       "category": "secret_reference",
       "severity": "medium",
       "path": "mcp.json",
       "line": 7,
-      "evidence": "\"DATABASE_URL\": \"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\"",
+      "evidence": "\"DATABASE_URL\": \"postgres://readonly:<redacted>@localhost:5432/app\"",
       "recommendation": "Reference secret names only in reports; never send values to model context."
     }
   ],
@@ -37,7 +56,7 @@
       "score": 6,
       "path": "mcp.json",
       "line": 7,
-      "evidence": "\"DATABASE_URL\": \"postgres://readonly:${DB_PASSWORD}@localhost:5432/app\"",
+      "evidence": "\"DATABASE_URL\": \"postgres://readonly:<redacted>@localhost:5432/app\"",
       "recommendation": "Use read-only database users, local replicas, query limits, and no production credentials by default."
     }
   ],

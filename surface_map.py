@@ -160,6 +160,7 @@ def severity(score: int) -> str:
 def safe_excerpt(line: str) -> str:
     redacted = re.sub(r"([A-Z][A-Z0-9_]{6,})=([^\s]+)", r"\1=<redacted>", line.strip())
     redacted = re.sub(r"(api[_-]?key|token|secret|password)(['\"]?\s*[:=]\s*)['\"][^'\"]+['\"]", r"\1\2<redacted>", redacted, flags=re.I)
+    redacted = re.sub(r"([a-z][a-z0-9+.-]*://[^:/\s]+:)([^@\s]+)(@)", r"\1<redacted>\3", redacted, flags=re.I)
     return redacted[:220]
 
 
@@ -188,6 +189,57 @@ def rule_severity(score: int) -> str:
     if score >= 4:
         return "medium"
     return "low"
+
+
+def extract_mcp_servers(root: Path) -> list[dict[str, Any]]:
+    servers: list[dict[str, Any]] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file() or path.name not in {"mcp.json", ".mcp.json"}:
+            continue
+        if any(part in {".git", "node_modules", "vendor", "target", "__pycache__"} for part in path.parts):
+            continue
+        rel = str(path.relative_to(root))
+        try:
+            data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        raw_servers = data.get("mcpServers") if isinstance(data, dict) else None
+        if not isinstance(raw_servers, dict):
+            continue
+        for name, config in sorted(raw_servers.items()):
+            if not isinstance(config, dict):
+                continue
+            args = config.get("args", [])
+            env = config.get("env", {})
+            env_keys = sorted(str(key) for key in env) if isinstance(env, dict) else []
+            server = {
+                "name": str(name),
+                "path": rel,
+                "command": str(config.get("command", "")),
+                "args": [safe_excerpt(str(arg)) for arg in args] if isinstance(args, list) else [],
+                "env_keys": env_keys,
+                "risk_hints": mcp_risk_hints(str(config.get("command", "")), args if isinstance(args, list) else [], env_keys),
+            }
+            servers.append(server)
+    return servers[:40]
+
+
+def mcp_risk_hints(command: str, args: list[Any], env_keys: list[str]) -> list[str]:
+    text = " ".join([command, *(str(arg) for arg in args), *env_keys])
+    hints: list[str] = []
+    if re.search(r"\b(npx|npm|pnpm|yarn|pip|uvx)\b", text, re.I):
+        hints.append("package runner")
+    if re.search(r"\b(bash|sh|zsh|powershell|cmd|python|node)\b", text, re.I):
+        hints.append("local process")
+    if re.search(r"(browser|playwright|chrome|chromium|user-data-dir|cookies|storageState)", text, re.I):
+        hints.append("browser/session")
+    if re.search(r"(/home|/Users|/var/run|/etc|~/?|C:\\\\)", text, re.I):
+        hints.append("broad filesystem path")
+    if re.search(r"(TOKEN|SECRET|PASSWORD|KEY|CREDENTIAL|DATABASE_URL)", text, re.I):
+        hints.append("credential reference")
+    if re.search(r"(postgres|mysql|mongodb|redis|sqlite|database)", text, re.I):
+        hints.append("database access")
+    return hints
 
 
 def scan(root: Path) -> dict[str, Any]:
@@ -244,6 +296,7 @@ def scan(root: Path) -> dict[str, Any]:
         "risk_score": risk_score,
         "category_counts": categories,
         "rule_counts": rule_counts,
+        "mcp_servers": extract_mcp_servers(root),
         "findings": [asdict(f) for f in findings[:80]],
         "rules": rules[:80],
         "gemma_review": None,
@@ -265,6 +318,7 @@ def build_gemma_prompt(report: dict[str, Any]) -> str:
         "rule_counts": report.get("rule_counts", {}),
         "findings": report["findings"][:30],
         "rules": report.get("rules", [])[:30],
+        "mcp_servers": report.get("mcp_servers", [])[:20],
     }
     return (
         "You are Gemma 4 acting as a pragmatic local agent-security reviewer. "
@@ -397,6 +451,7 @@ def safe_install_context(report: dict[str, Any]) -> dict[str, Any]:
         "risk_score": report.get("risk_score", 0),
         "risk_signals": report.get("category_counts", {}),
         "public_rules": report.get("rule_counts", {}),
+        "mcp_servers": report.get("mcp_servers", []),
         "agent_context": agent_context(report),
         "gemma_review": report.get("gemma_review") or fallback_review(report),
     }

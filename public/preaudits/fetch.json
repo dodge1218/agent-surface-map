@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-18T17:02:30Z",
+  "generated_at": "2026-05-19T19:50:51Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/fetch",
   "scanned_files": 2,
   "risk_score": 6,
@@ -7,6 +7,21 @@
     "network_access": 2
   },
   "rule_counts": {},
+  "mcp_servers": [
+    {
+      "name": "fetch",
+      "path": "mcp.json",
+      "command": "python",
+      "args": [
+        "-m",
+        "mcp_server_fetch"
+      ],
+      "env_keys": [],
+      "risk_hints": [
+        "local process"
+      ]
+    }
+  ],
   "findings": [
     {
       "category": "network_access",

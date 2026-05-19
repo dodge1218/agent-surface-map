@@ -17,6 +17,7 @@ Modern developer agents can read repos, run shell commands, browse logged-in sit
 Traditional scanners catch dependencies and secrets. Agent Surface Map focuses on the agent operating surface:
 
 - enabled MCP servers
+- parsed MCP server command, args, env keys, and risk hints
 - tool permission hints
 - writable filesystem scope
 - shell and browser automation access

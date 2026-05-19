@@ -90,6 +90,7 @@ function render(report) {
   document.getElementById("summary").textContent = review.summary || "No narrative review found.";
   list(review.top_risks, "top-risks");
   list(review.hardening_plan || review.quick_wins, "hardening-plan");
+  renderMcpServers(report.mcp_servers || []);
 
   const capabilities = document.getElementById("capabilities");
   capabilities.innerHTML = "";
@@ -134,6 +135,37 @@ function render(report) {
       <p class="safe-note">${safeWorkflowNote(item.category)}<small>${item.recommendation}</small></p>
     `;
     findings.appendChild(card);
+  }
+}
+
+function renderMcpServers(servers) {
+  document.getElementById("mcp-count").textContent = `${servers.length} server${servers.length === 1 ? "" : "s"}`;
+  const node = document.getElementById("mcp-servers");
+  node.innerHTML = "";
+  if (!servers.length) {
+    const empty = document.createElement("article");
+    empty.className = "mcp-server empty";
+    empty.textContent = "No MCP server entries were found in scanned config files.";
+    node.appendChild(empty);
+    return;
+  }
+  for (const server of servers) {
+    const card = document.createElement("article");
+    card.className = "mcp-server";
+    const hints = (server.risk_hints || []).map((hint) => `<span>${escapeHtml(hint)}</span>`).join("");
+    card.innerHTML = `
+      <div>
+        <strong>${escapeHtml(server.name)}</strong>
+        <code>${escapeHtml(server.path)}</code>
+      </div>
+      <dl>
+        <div><dt>Command</dt><dd>${escapeHtml(server.command || "not specified")}</dd></div>
+        <div><dt>Args</dt><dd>${escapeHtml((server.args || []).join(" ") || "none")}</dd></div>
+        <div><dt>Env keys</dt><dd>${escapeHtml((server.env_keys || []).join(", ") || "none")}</dd></div>
+      </dl>
+      <div class="hint-row">${hints || "<span>no structured hints</span>"}</div>
+    `;
+    node.appendChild(card);
   }
 }
 
