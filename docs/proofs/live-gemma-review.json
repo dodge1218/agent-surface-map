@@ -1,0 +1,10 @@
+{
+  "target_url": "https://github.com/dodge1218/agent-surface-demo-mcp",
+  "risk_score": 45,
+  "review_source": "gemma",
+  "mcp_servers": [
+    "demo-browser",
+    "demo-filesystem"
+  ],
+  "summary": "The agent surface analysis reveals a risk score of 45, primarily driven by overly permissive filesystem access and insecure browser profile management within mcp.json. The configuration grants the agent access to home directory paths and utilizes a persistent browser profile, increasing the risk of session hijacking or unauthorized data exfiltration."
+}

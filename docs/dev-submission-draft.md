@@ -72,6 +72,8 @@ python3 scripts/mcp_workflow_smoke.py
 
 It initializes the MCP server, lists tools, scans the public demo MCP fixture, and returns install constraints. The proof is in `docs/proofs/mcp-workflow-proof.md`.
 
+The deployed API is also configured with a guarded Gemma 4 provider path. A live proof with `review_source: "gemma"` is saved in `docs/proofs/live-gemma-review.md`.
+
 ## Code
 
 Repository:
