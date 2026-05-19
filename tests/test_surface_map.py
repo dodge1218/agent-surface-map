@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from surface_map import review_report, safe_install_context, scan  # noqa: E402
+from surface_map import parse_gemma_content, review_report, safe_install_context, scan  # noqa: E402
 from mcp_server import assert_allowed_local_path  # noqa: E402
 from api.scan import URL_RE  # noqa: E402
 
@@ -122,6 +122,11 @@ class SurfaceMapTests(unittest.TestCase):
 
     def test_demo_fixture_url_is_accepted(self):
         self.assertRegex("https://github.com/dodge1218/agent-surface-demo-mcp", URL_RE)
+
+    def test_fenced_gemma_json_is_parsed(self):
+        content = '```json\n{"summary":"ok","top_risks":[],"quick_wins":[],"hardening_plan":[]}\n```'
+        parsed = parse_gemma_content(content)
+        self.assertEqual(parsed["summary"], "ok")
 
 
 class McpProtocolTests(unittest.TestCase):

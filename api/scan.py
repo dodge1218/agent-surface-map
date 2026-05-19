@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 import zipfile
@@ -20,18 +22,40 @@ from surface_map import review_report, scan  # noqa: E402
 MAX_BODY = 8192
 MAX_ZIP_BYTES = 8 * 1024 * 1024
 URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
+SCAN_RATE: dict[str, list[float]] = {}
+GEMMA_RATE: dict[str, list[float]] = {}
+GEMMA_BUDGET_PATH = Path(tempfile.gettempdir()) / "agent-surface-map-gemma-budget.json"
+
+
+class PublicApiError(Exception):
+    def __init__(self, status: int, message: str) -> None:
+        super().__init__(message)
+        self.status = status
 
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         try:
+            client_ip = client_ip_from_headers(self.headers)
+            enforce_rate_limit(
+                SCAN_RATE,
+                f"scan:{client_ip}",
+                env_int("ASM_SCAN_RATE_LIMIT_PER_HOUR", 30),
+                3600,
+                "scan rate limit exceeded; try again later",
+            )
             length = int(self.headers.get("content-length", "0"))
             if length <= 0 or length > MAX_BODY:
                 raise ValueError("request body is too large")
             payload = json.loads(self.rfile.read(length).decode("utf-8"))
             url = str(payload.get("url", "")).strip().rstrip("/")
-            report = scan_url(url)
+            allow_gemma, skip_reason = gemma_public_gate(client_ip)
+            report = scan_url(url, allow_gemma=allow_gemma)
+            if skip_reason:
+                report["gemma_skip_reason"] = skip_reason
             self.send_json(200, report)
+        except PublicApiError as exc:
+            self.send_json(exc.status, {"error": str(exc)})
         except Exception as exc:  # noqa: BLE001
             self.send_json(400, {"error": str(exc)})
 
@@ -50,7 +74,7 @@ class handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def scan_url(url: str) -> dict:
+def scan_url(url: str, *, allow_gemma: bool | None = None) -> dict:
     parsed = urlparse(url)
     if parsed.scheme != "https" or parsed.netloc != "github.com" or not URL_RE.match(url):
         raise ValueError("only simple public GitHub repo URLs are accepted in this demo")
@@ -71,8 +95,84 @@ def scan_url(url: str) -> dict:
         report = scan(roots[0])
         report["source_url"] = url
         report["target"] = f"{owner}/{repo}"
-        review_report(report)
+        review_report(report, allow_gemma=allow_gemma)
         return report
+
+
+def client_ip_from_headers(headers) -> str:
+    forwarded = headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",", 1)[0].strip() or "unknown"
+    return headers.get("x-real-ip", "unknown")
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        return int(os.environ.get(name, str(default)))
+    except ValueError:
+        return default
+
+
+def env_float(name: str, default: float) -> float:
+    try:
+        return float(os.environ.get(name, str(default)))
+    except ValueError:
+        return default
+
+
+def enforce_rate_limit(store: dict[str, list[float]], key: str, limit: int, window_seconds: int, message: str) -> None:
+    if limit <= 0:
+        return
+    now = time.time()
+    cutoff = now - window_seconds
+    hits = [hit for hit in store.get(key, []) if hit > cutoff]
+    if len(hits) >= limit:
+        raise PublicApiError(429, message)
+    hits.append(now)
+    store[key] = hits
+
+
+def gemma_public_gate(client_ip: str) -> tuple[bool, str | None]:
+    if os.environ.get("ASM_GEMMA_PUBLIC_ENABLED", "").lower() not in {"1", "true", "yes"}:
+        return False, "public Gemma review disabled"
+    if not os.environ.get("GEMMA_API_KEY") or not os.environ.get("GEMMA_BASE_URL"):
+        return False, "Gemma provider not configured"
+    try:
+        enforce_rate_limit(
+            GEMMA_RATE,
+            f"gemma:{client_ip}",
+            env_int("ASM_GEMMA_RATE_LIMIT_PER_HOUR", 6),
+            3600,
+            "Gemma review rate limit reached for this IP",
+        )
+    except PublicApiError as exc:
+        return False, str(exc)
+    allowed, reason = reserve_gemma_budget()
+    return allowed, None if allowed else reason
+
+
+def reserve_gemma_budget() -> tuple[bool, str]:
+    estimated_cost = env_float("ASM_GEMMA_REVIEW_ESTIMATED_USD", 0.02)
+    daily_cap = env_float("ASM_GEMMA_DAILY_USD_CAP", 10.0)
+    today = time.strftime("%Y-%m-%d", time.gmtime())
+    state = {"day": today, "estimated_usd": 0.0, "calls": 0}
+    try:
+        if GEMMA_BUDGET_PATH.exists():
+            state = json.loads(GEMMA_BUDGET_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        state = {"day": today, "estimated_usd": 0.0, "calls": 0}
+    if state.get("day") != today:
+        state = {"day": today, "estimated_usd": 0.0, "calls": 0}
+    next_total = float(state.get("estimated_usd", 0.0)) + estimated_cost
+    if next_total > daily_cap:
+        return False, "Gemma daily budget cap reached"
+    state["estimated_usd"] = round(next_total, 6)
+    state["calls"] = int(state.get("calls", 0)) + 1
+    try:
+        GEMMA_BUDGET_PATH.write_text(json.dumps(state), encoding="utf-8")
+    except OSError:
+        return False, "Gemma budget state unavailable"
+    return True, ""
 
 
 def download_github_zip(owner: str, repo: str, destination: Path) -> None:

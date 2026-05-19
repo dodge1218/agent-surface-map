@@ -346,15 +346,30 @@ def call_gemma(prompt: str) -> dict[str, Any]:
     req = urllib.request.Request(
         base_url.rstrip("/") + "/chat/completions",
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": os.environ.get("GEMMA_HTTP_REFERER", "https://gemma-agent-surface-map.vercel.app"),
+            "X-Title": os.environ.get("GEMMA_APP_TITLE", "Agent Surface Map"),
+        },
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=60) as resp:
         data = json.loads(resp.read().decode("utf-8"))
     content = data["choices"][0]["message"]["content"]
+    return parse_gemma_content(content)
+
+
+def parse_gemma_content(content: str) -> dict[str, Any]:
     try:
         return json.loads(content)
     except json.JSONDecodeError:
+        fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.S)
+        if fenced:
+            try:
+                return json.loads(fenced.group(1))
+            except json.JSONDecodeError:
+                pass
         return {"summary": content, "top_risks": [], "quick_wins": [], "hardening_plan": []}
 
 

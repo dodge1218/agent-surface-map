@@ -39,3 +39,5 @@
 - [ ] MCP local scan refuses root/profile/credential directories.
 - [ ] GitHub scans use shallow/no-submodule/no-hook retrieval.
 - [ ] MCP response includes install constraints.
+- [ ] Public scan rate limit is configured.
+- [ ] Public Gemma review rate/spend guardrails are configured.

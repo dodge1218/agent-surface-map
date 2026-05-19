@@ -22,6 +22,17 @@ Agent Surface Map reviews untrusted MCP/tool repositories. Its own MCP server mu
 - Gemma calls receive only the redacted surface map, not raw repository contents or secret values.
 - Gemma failure does not block scanning; reports fall back to deterministic local review.
 - MCP config parsing records env key names only, not env values.
+- Public API scans are per-IP rate limited.
+- Public Gemma reviews are separately rate limited and guarded by an estimated daily budget cap.
+
+Current public defaults:
+
+- scans: 30 per IP per hour
+- Gemma reviews: 6 per IP per hour
+- estimated Gemma budget: $10 per UTC day
+- estimated cost reservation: $0.02 per attempted Gemma review
+
+The hosted demo uses OpenRouter's free Gemma 4 31B route when available. Provider-side 429s or budget gates fall back to deterministic local review.
 
 ## Public-Safe Rule Layer
 

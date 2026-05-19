@@ -104,6 +104,8 @@ I would use Gemma 4 31B Dense for the final review because the task needs nuance
 
 The model is not trusted with raw secrets and does not run commands. It explains a local scan that already happened. When no Gemma endpoint is configured, the app clearly labels the deterministic fallback with `review_source: "fallback"` instead of pretending the review came from the model.
 
+For the hosted demo, public scans are rate-limited and Gemma calls are separately capped. If the provider route is unavailable or rate-limited, the app still returns the deterministic review and marks the source as fallback.
+
 ## Pre-Audited MCP Library
 
 The demo includes a small library of common MCP install profiles:

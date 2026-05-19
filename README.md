@@ -99,6 +99,18 @@ The local server, Vercel API, and MCP server use Gemma automatically when `GEMMA
 
 The prompt sent to Gemma contains only file paths, matched config snippets, and redacted environment variable names. Secret values are not read or sent.
 
+Public deployment controls:
+
+```bash
+ASM_SCAN_RATE_LIMIT_PER_HOUR=30
+ASM_GEMMA_PUBLIC_ENABLED=1
+ASM_GEMMA_RATE_LIMIT_PER_HOUR=6
+ASM_GEMMA_DAILY_USD_CAP=10
+ASM_GEMMA_REVIEW_ESTIMATED_USD=0.02
+```
+
+For a provider-enforced spend cap, use an API key with its own provider-side credit limit. The app-level budget cap is a defensive fallback for public demos.
+
 ## Challenge Fit
 
 Gemma 4 is central because the hard part is not collecting files. The hard part is explaining what matters:
