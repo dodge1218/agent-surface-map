@@ -30,6 +30,7 @@
 - [ ] `python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py`
 - [ ] `node --check public/app.js`
 - [ ] `curl -X POST https://gemma-agent-surface-map.vercel.app/api/scan -H 'content-type: application/json' -d '{"url":"https://github.com/octocat/Hello-World"}'`
+- [ ] `python3 scripts/mcp_workflow_smoke.py`
 
 ## Security
 

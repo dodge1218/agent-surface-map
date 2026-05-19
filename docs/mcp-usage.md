@@ -76,6 +76,16 @@ Agent receives: sandbox_first / do_not_add / add_carefully plus constraints
 Agent follows the returned context before editing config or running install commands.
 ```
 
+## Smoke Test
+
+Run the stdio MCP workflow smoke test against the public demo fixture:
+
+```bash
+python3 scripts/mcp_workflow_smoke.py
+```
+
+The script initializes the MCP server, lists tools, calls `scan_github_tool`, and prints the install verdict plus agent constraints.
+
 ## Gemma Review Source
 
 If `GEMMA_API_KEY` and `GEMMA_BASE_URL` are set, MCP scan tools attach a Gemma review and return `review_source: "gemma"`.

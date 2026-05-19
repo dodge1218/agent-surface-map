@@ -64,6 +64,14 @@ python3 mcp_server.py
 
 That lets a coding agent call `scan_github_tool(url)` before editing local MCP config or running install commands.
 
+I also included a stdio workflow smoke test:
+
+```bash
+python3 scripts/mcp_workflow_smoke.py
+```
+
+It initializes the MCP server, lists tools, scans the public demo MCP fixture, and returns install constraints. The proof is in `docs/proofs/mcp-workflow-proof.md`.
+
 ## Code
 
 Repository:

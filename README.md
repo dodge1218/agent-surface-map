@@ -124,6 +124,12 @@ See `docs/mcp-usage.md` for client config and tool schemas. See `docs/security-n
 
 Use it when a coding agent is about to add a new MCP server, browser tool, skill, plugin, or repo instruction pack. The agent can call `scan_github_tool` or `scan_local_tool` first, then use the returned install context as constraints before touching local config.
 
+MCP workflow smoke test:
+
+```bash
+python3 scripts/mcp_workflow_smoke.py
+```
+
 Optional local path allowlist:
 
 ```bash
