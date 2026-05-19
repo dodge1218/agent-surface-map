@@ -56,11 +56,10 @@ def scan_url(url: str) -> dict:
         raise ValueError("only simple public GitHub repo URLs are accepted in this demo")
 
     owner, repo = parsed.path.strip("/").split("/", 1)
-    zip_url = f"https://api.github.com/repos/{owner}/{repo}/zipball"
     with tempfile.TemporaryDirectory(prefix="agent-surface-map-") as tmp:
         tmp_path = Path(tmp)
         zip_path = tmp_path / "repo.zip"
-        download(zip_url, zip_path)
+        download_github_zip(owner, repo, zip_path)
         extract_root = tmp_path / "repo"
         extract_root.mkdir()
         with zipfile.ZipFile(zip_path) as archive:
@@ -74,6 +73,24 @@ def scan_url(url: str) -> dict:
         report["target"] = f"{owner}/{repo}"
         review_report(report)
         return report
+
+
+def download_github_zip(owner: str, repo: str, destination: Path) -> None:
+    urls = [
+        f"https://api.github.com/repos/{owner}/{repo}/zipball",
+        f"https://codeload.github.com/{owner}/{repo}/zip/refs/heads/main",
+        f"https://codeload.github.com/{owner}/{repo}/zip/refs/heads/master",
+    ]
+    errors: list[str] = []
+    for url in urls:
+        try:
+            if destination.exists():
+                destination.unlink()
+            download(url, destination)
+            return
+        except ValueError as exc:
+            errors.append(str(exc))
+    raise ValueError(f"could not download repository archive: {'; '.join(errors)}")
 
 
 def download(url: str, destination: Path) -> None:

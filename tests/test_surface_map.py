@@ -10,6 +10,7 @@ sys.path.insert(0, str(ROOT))
 
 from surface_map import review_report, safe_install_context, scan  # noqa: E402
 from mcp_server import assert_allowed_local_path  # noqa: E402
+from api.scan import URL_RE  # noqa: E402
 
 
 class SurfaceMapTests(unittest.TestCase):
@@ -118,6 +119,9 @@ class SurfaceMapTests(unittest.TestCase):
 
         self.assertEqual(report["review_source"], "fallback")
         self.assertIn("summary", report["gemma_review"])
+
+    def test_demo_fixture_url_is_accepted(self):
+        self.assertRegex("https://github.com/dodge1218/agent-surface-demo-mcp", URL_RE)
 
 
 class McpProtocolTests(unittest.TestCase):
