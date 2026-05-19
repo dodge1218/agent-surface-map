@@ -235,6 +235,22 @@ h3 {
   font-size: 0.93rem;
 }
 
+.demo-scan {
+  margin-top: 12px;
+  border: 1px solid rgba(26, 115, 232, 0.24);
+  background: #e8f0fe;
+  color: var(--blue);
+  font: inherit;
+  font-weight: 850;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+
+.demo-scan:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 .hero-art {
   min-height: 330px;
   position: relative;

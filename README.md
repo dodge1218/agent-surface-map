@@ -47,6 +47,12 @@ http://localhost:8787
 
 The demo server accepts simple public GitHub repository URLs, clones them with shallow/no-submodule settings, removes `.git`, scans local files, and returns the same verdict screen. It does not execute repository code.
 
+The hosted UI includes a one-click scan for this tiny public fixture:
+
+```text
+https://github.com/dodge1218/agent-surface-demo-mcp
+```
+
 ## Process
 
 See `docs/process.md` for the full web + MCP workflow.

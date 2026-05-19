@@ -39,6 +39,12 @@ Live demo:
 https://gemma-agent-surface-map.vercel.app
 ```
 
+The "Try demo MCP scan" button scans this tiny public fixture:
+
+```text
+https://github.com/dodge1218/agent-surface-demo-mcp
+```
+
 Run it locally:
 
 ```bash

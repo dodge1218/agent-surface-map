@@ -17,6 +17,7 @@
 ## Demo
 
 - [ ] Home page loads.
+- [ ] `Try demo MCP scan` works with `https://github.com/dodge1218/agent-surface-demo-mcp`.
 - [ ] Paste-link scanner works with a small public repo.
 - [ ] Invalid URL returns a readable error.
 - [ ] Gemma verdict panel is visually obvious.

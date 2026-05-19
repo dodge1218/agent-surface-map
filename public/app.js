@@ -8,6 +8,8 @@ async function loadReport() {
 const form = document.getElementById("scan-form");
 const input = document.getElementById("scan-url");
 const statusNode = document.getElementById("scan-status");
+const demoScan = document.getElementById("demo-scan");
+const DEMO_SCAN_URL = "https://github.com/dodge1218/agent-surface-demo-mcp";
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -17,8 +19,18 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  await runScan(url);
+});
+
+demoScan.addEventListener("click", async () => {
+  input.value = DEMO_SCAN_URL;
+  await runScan(DEMO_SCAN_URL);
+});
+
+async function runScan(url) {
   const button = form.querySelector("button");
   button.disabled = true;
+  demoScan.disabled = true;
   button.textContent = "Scanning";
   statusNode.textContent = "Cloning read-only, scanning config files, redacting secrets...";
 
@@ -38,9 +50,10 @@ form.addEventListener("submit", async (event) => {
     statusNode.textContent = `${error.message}. Static demo is still shown below.`;
   } finally {
     button.disabled = false;
+    demoScan.disabled = false;
     button.textContent = "Scan";
   }
-});
+}
 
 function list(items, id) {
   const node = document.getElementById(id);

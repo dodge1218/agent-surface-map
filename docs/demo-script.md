@@ -11,7 +11,7 @@ Target length: 60 to 90 seconds.
 5. Point at browser profile and filesystem signals.
 6. Click `GitHub MCP` or `Postgres MCP`.
 7. Show how the same screen handles token/database risk.
-8. Mention live scan: paste a small GitHub repo URL and run scan.
+8. Click `Try demo MCP scan` to run the hosted scanner against the public demo fixture.
 9. End with MCP workflow: coding agents can call `scan_github_tool(url)` before editing config.
 
 ## Voiceover
