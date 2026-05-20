@@ -1,39 +1,18 @@
 ---
-title: Agent Surface Map: Using Gemma 4 to make local coding agents safer
+title: Agent Surface Map: Gemma 4 review before you install an MCP
 published: false
 tags: devchallenge, gemmachallenge, gemma
 ---
 
-*This is a submission for the [Gemma 4 Challenge: Build with Gemma 4](https://dev.to/challenges/google-gemma-2026-05-06)*
+*This is a submission for the [Gemma 4 Challenge: Build with Gemma 4](https://dev.to/challenges/google-gemma-2026-05-06).*
 
-## What I Built
-
-Agent Surface Map is a pre-install safety scanner for developers who add MCP servers, skills, browser tools, repo instructions, and other capabilities to coding agents.
-
-Paste a GitHub repo link and the app runs a read-only review before the tool gets wired into Claude Code, Codex, Cursor, or another local agent workflow.
-
-The informal version:
+So the thing I built is pretty simple:
 
 ```text
 Paste repo. Scanner checks risk. Gemma explains. Agent installs safer.
 ```
 
-The scanner inventories the agent operating surface, redacts secret-adjacent data, and uses Gemma 4 to turn that inventory into an install decision:
-
-- which MCP servers are declared
-- which commands, args, and env key names appear
-- what the agent can execute
-- what it can write
-- where browser automation appears
-- which environment variables are referenced
-- which instruction files may steer future agent behavior
-- whether to add it carefully, sandbox it first, or reject it
-
-The goal is simple: before you give a coding agent a new tool, know what that tool is asking for.
-
-## Demo
-
-The web demo shows a scan of a sample agent stack. It includes a verdict, risk score, review source, risk signals, pre-audited MCP templates, and safe workflow notes.
+Agent Surface Map is a pre-install scanner for MCP servers and agent tools. Before a coding agent gets a new browser tool, filesystem mount, shell helper, Gmail/GitHub integration, or repo instruction pack, the app runs a read-only scan and asks: what is this tool actually asking for?
 
 Live demo:
 
@@ -41,115 +20,86 @@ Live demo:
 https://gemma-agent-surface-map.vercel.app
 ```
 
-The "Try demo MCP scan" button scans this tiny public fixture:
-
-```text
-https://github.com/dodge1218/agent-surface-demo-mcp
-```
-
-Run it locally:
-
-```bash
-python3 surface_map.py examples/demo-agent-stack --out public/sample-report.json
-python3 server.py
-```
-
-Then open `http://localhost:8787`.
-
-For developer workflow, the repo also includes an MCP server:
-
-```bash
-python3 mcp_server.py
-```
-
-That lets a coding agent call `scan_github_tool(url)` before editing local MCP config or running install commands.
-
-I also included a stdio workflow smoke test:
-
-```bash
-python3 scripts/mcp_workflow_smoke.py
-```
-
-It initializes the MCP server, lists tools, scans the public demo MCP fixture, and returns install constraints. The proof is in `docs/proofs/mcp-workflow-proof.md`.
-
-The deployed API is also configured with a guarded Gemma 4 provider path. A live proof with `review_source: "gemma"` is saved in `docs/proofs/live-gemma-review.md`.
-
-## Code
-
-Repository:
+Code:
 
 ```text
 https://github.com/dodge1218/agent-surface-map
 ```
 
-Key implementation pieces:
+## What it does
 
-- `surface_map.py` — deterministic local scanner and Gemma prompt builder
-- `server.py` — local web/API demo server
-- `api/scan.py` — Vercel serverless scanner endpoint
-- `mcp_server.py` — stdio MCP server for coding-agent workflows
-- `tests/test_surface_map.py` — scanner and MCP protocol tests
+The scanner looks at install-facing files: `mcp.json`, package files, repo instructions, Docker files, env examples, and similar config. It does not execute the repo.
 
-## How I Used Gemma 4
+It pulls out:
 
-The deterministic scanner is intentionally boring: it walks local files, detects agent-surface signals, and redacts secret values.
+- MCP server names, commands, args, and env key names
+- shell/process surfaces
+- browser automation and profile reuse
+- filesystem mounts
+- cloud/database/token references
+- prompt-injection-ish repo instructions
+- install scripts and local listener hints
 
-Gemma 4 is the intended judgment layer. The deterministic scanner finds evidence; Gemma receives a compact, redacted inventory and returns a structured review with:
+Then it redacts secret-looking values and sends the compact surface map to Gemma 4.
 
-- summary
-- top risks
-- quick wins
-- hardening plan
-- install guidance
+Gemma is the judgment layer. The deterministic scanner finds the evidence; Gemma turns it into a practical install decision and hardening plan.
 
-I would use Gemma 4 31B Dense for the final review because the task needs nuanced security reasoning and prioritization more than tiny-device latency. Smaller Gemma 4 variants are a good fit for inline local checks, but the 31B model is the better reviewer for turning messy tool access into a practical add/sandbox/reject decision.
+## Why this felt worth building
 
-The model is not trusted with raw secrets and does not run commands. It explains a local scan that already happened. When no Gemma endpoint is configured, the app clearly labels the deterministic fallback with `review_source: "fallback"` instead of pretending the review came from the model.
+Coding agents changed the shape of local risk. A repo is not just code anymore. It can ship instructions for your agent, MCP config, package scripts, browser access, write paths, and credential names.
 
-For the hosted demo, public scans are rate-limited and Gemma calls are separately capped. If the provider route is unavailable or rate-limited, the app still returns the deterministic review and marks the source as fallback.
+That is basically a tiny operating surface on your laptop.
 
-## Pre-Audited MCP Library
+So this is the safety pause before the agent gets more power. Not a malware sandbox. Not a full audit. Just a fast answer to: should this be added globally, sandboxed first, or rejected?
 
-The demo includes a small library of common MCP install profiles:
+## Demo path
 
-- Stealth Browser
-- GitHub
-- Gmail
-- Filesystem
-- Playwright
-- Fetch
-- Postgres
-- Memory + Shell
+Click `Try demo MCP scan` on the homepage. It scans this tiny public fixture:
 
-Each card loads a generated report into the same verdict screen. The point is not to certify those upstream tools. The point is to show the workflow developers need before adding high-trust tools to an agent.
+```text
+https://github.com/dodge1218/agent-surface-demo-mcp
+```
 
-## Safety Design
+The live scan returns parsed MCP servers, a risk score, safe workflow notes, and `review_source: "gemma"` when the Gemma route is available. If the provider rate-limits, the app falls back to the deterministic local review and labels that honestly.
 
-The scanner is intentionally conservative:
+There is also an MCP server in the repo:
 
-- it does not execute repository code
-- GitHub scans use shallow/no-submodule retrieval
-- secret-looking values are redacted before review
-- local MCP scans refuse filesystem root and obvious credential/profile directories
-- MCP output includes workflow constraints for the calling agent
+```bash
+python3 mcp_server.py
+```
 
-That matters because the product is about evaluating untrusted agent tools. The evaluator should not become another unsafe agent tool.
+That means a coding agent can call `scan_github_tool(url)` before it edits local MCP config. That is the real workflow: "hey agent, before you install this new tool, ask Agent Surface Map what constraints to follow."
+
+## Safety choices
+
+I kept the evaluator boring on purpose:
+
+- no repo code execution
+- shallow/no-submodule GitHub retrieval
+- secret value redaction
+- local path refusal for root/profile/credential dirs
+- bounded MCP responses
+- public scan rate limits
+- Gemma review rate limits
+- app-level $10/day estimated Gemma cap
+
+The hosted demo uses a guarded Gemma 4 path through OpenRouter. I also saved proof artifacts for the MCP workflow and live Gemma review in `docs/proofs/`.
 
 ## Verification
-
-I tested the scanner, MCP protocol flow, and deployed API:
 
 ```bash
 python3 -m unittest discover -s tests -v
 python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py
 node --check public/app.js
-curl -X POST https://gemma-agent-surface-map.vercel.app/api/scan \
-  -H 'content-type: application/json' \
-  -d '{"url":"https://github.com/octocat/Hello-World"}'
+python3 scripts/mcp_workflow_smoke.py
 ```
 
-## Why It Matters
+Current proof:
 
-Coding agents changed the shape of developer risk. A repo can now include instructions for agents, MCP configs, browser access, package scripts, and credentials by reference. That is not just code; it is an operating surface.
+- live demo deployed
+- Gemma route configured
+- public demo MCP fixture works
+- MCP stdio workflow works
+- scanner tests pass
 
-Agent Surface Map treats that surface as something builders should be able to inspect before they automate more work.
+I think the interesting part is not the regex scanner. It is the handoff. Deterministic code collects boring evidence, Gemma turns it into something a developer or coding agent can actually use, and the install gets safer before anything touches the shell.

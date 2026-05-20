@@ -2,6 +2,11 @@
 
 Generated demo assets for the submission.
 
+Current assets:
+
+- `agent-surface-map-home.png` — current homepage screenshot.
+- `agent-surface-map-demo.mp4` — silent 18-second teaser made from the current UI screenshot.
+
 Recommended capture command:
 
 ```bash
