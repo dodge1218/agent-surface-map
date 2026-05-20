@@ -22,17 +22,17 @@ Agent Surface Map reviews untrusted MCP/tool repositories. Its own MCP server mu
 - Gemma calls receive only the redacted surface map, not raw repository contents or secret values.
 - Gemma failure does not block scanning; reports fall back to deterministic local review.
 - MCP config parsing records env key names only, not env values.
-- Public API scans are per-IP rate limited.
-- Public Gemma reviews are separately rate limited and guarded by an estimated daily budget cap.
+- Public API scans are per-IP rate limited with best-effort in-memory demo throttles.
+- Public Gemma reviews are separately rate limited and guarded by a best-effort estimated daily budget throttle.
 
 Current public defaults:
 
 - scans: 30 per IP per hour
 - Gemma reviews: 6 per IP per hour
-- estimated Gemma budget: $10 per UTC day
+- estimated Gemma budget throttle: $10 per UTC day
 - estimated cost reservation: $0.02 per attempted Gemma review
 
-The hosted demo uses OpenRouter's free Gemma 4 31B route when available. Provider-side 429s or budget gates fall back to deterministic local review.
+The hosted demo uses OpenRouter's free Gemma 4 31B route when available. Provider-side 429s or budget gates fall back to deterministic local review. Hard spend enforcement requires a provider-side capped key or a durable external budget store.
 
 ## Public-Safe Rule Layer
 
@@ -61,7 +61,7 @@ Use this before adding a new MCP server, browser automation tool, coding-agent s
 
 The result should constrain the calling agent:
 
-- do not install globally when verdict is `sandbox_first` or `do_not_add`
+- do not install globally when posture is `sandbox_first` or `do_not_add`
 - do not reuse logged-in browser profiles
 - do not pass `.env` values into prompts
 - require human approval before shell commands

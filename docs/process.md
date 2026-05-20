@@ -3,7 +3,7 @@
 Agent Surface Map has one job:
 
 ```text
-Paste repo. Scanner checks risk. Gemma explains. Agent installs safer.
+Paste repo. Scanner maps surface. Gemma decides posture. Agent installs safer.
 ```
 
 ## Flow
@@ -68,4 +68,3 @@ Gemma 4 is the judgment layer:
 - ranks what to care about first
 - turns raw findings into developer-safe next steps
 - produces constraints a coding agent can follow
-

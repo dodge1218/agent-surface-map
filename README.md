@@ -1,14 +1,14 @@
 # Agent Surface Map
 
-Agent Surface Map is a local-first safety scanner for people building with coding agents, MCP servers, skills, plugins, browser automation, and shell tools.
+Agent Surface Map is a local-first install-risk reviewer for people building with coding agents, MCP servers, skills, plugins, browser automation, and shell tools.
 
-It inventories the files that define what an agent can see and do, then asks Gemma 4 to turn that inventory into prioritized risk cards and concrete hardening steps.
+It inventories the files that define what an agent can see and do, then asks Gemma 4 to turn that inventory into an install posture and concrete constraints.
 
 This project is a submission candidate for the DEV Gemma 4 Challenge.
 
 ## Ten-Word Version
 
-Paste repo. Scanner checks risk. Gemma explains. Agent installs safer.
+Paste repo. Scanner maps surface. Gemma decides posture. Agent installs safer.
 
 ## Why This Exists
 
@@ -47,7 +47,7 @@ http://localhost:8787
 
 The demo server accepts simple public GitHub repository URLs, clones them with shallow/no-submodule settings, removes `.git`, scans local files, and returns the same verdict screen. It does not execute repository code.
 
-The hosted UI includes a one-click scan for this tiny public fixture:
+The hosted UI includes a live scan and a saved verified Gemma 4 review for this tiny public fixture:
 
 ```text
 https://github.com/dodge1218/agent-surface-demo-mcp
@@ -56,18 +56,18 @@ https://github.com/dodge1218/agent-surface-demo-mcp
 ## Process
 
 See `docs/process.md` for the full web + MCP workflow.
-See `docs/catalog/preaudit-library.md` for the public MCP pre-audit template library.
+See `docs/catalog/preaudit-library.md` for the public MCP example review library.
 See `docs/rules.md` for the public rule catalog.
 
 Short version:
 
 ```text
-link/path -> read-only scan -> redacted surface map -> Gemma review -> install context
+link/path -> read-only scan -> redacted surface map -> Gemma install judgment -> agent constraints
 ```
 
 ## Example MCP Library
 
-The UI includes pre-audit templates for common MCP installs:
+The UI includes example review templates for common MCP installs:
 
 - Stealth Browser
 - GitHub
@@ -109,20 +109,21 @@ ASM_GEMMA_DAILY_USD_CAP=10
 ASM_GEMMA_REVIEW_ESTIMATED_USD=0.02
 ```
 
-For a provider-enforced spend cap, use an API key with its own provider-side credit limit. The app-level budget cap is a defensive fallback for public demos.
+For a provider-enforced spend cap, use an API key with its own provider-side credit limit. The app-level budget setting is a best-effort demo throttle for public demos.
 
 ## Challenge Fit
 
-Gemma 4 is central because the hard part is not collecting files. The hard part is explaining what matters:
+Gemma 4 is central because the hard part is not collecting files. The hard part is constrained judgment over messy developer context:
 
 - What can this agent actually do?
 - Which permissions create the highest practical risk?
-- Which fixes are concrete and low-friction?
-- What should a solo builder do first?
+- Should it be added carefully, sandboxed first, or rejected?
+- Which constraints should the coding agent follow before touching local config?
 
-The app uses deterministic scanning for trust and Gemma 4 for judgment, prioritization, and plain-English guidance.
+The app uses deterministic scanning for trust and Gemma 4 for install-policy judgment, prioritization, and plain-English guidance.
 
 See `docs/judging-map.md` for the build mapped directly to the challenge criteria.
+See `docs/doctrine.md` and `docs/prd.md` for the locked product doctrine and requirements.
 
 ## MCP Workflow
 
@@ -149,4 +150,20 @@ export ASM_ALLOWED_ROOTS="/path/to/projects:/tmp/review-work"
 python3 mcp_server.py
 ```
 
-Without `ASM_ALLOWED_ROOTS`, the MCP server still refuses obvious credential/profile directories and filesystem root.
+Without `ASM_ALLOWED_ROOTS`, the MCP server defaults local scans to the directory where the server was started, and still refuses obvious credential/profile directories and filesystem root.
+
+## Reproduce The Demo
+
+From a fresh clone:
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 surface_map.py examples/demo-agent-stack --out /tmp/report.json
+python3 scripts/mcp_workflow_smoke.py
+```
+
+Expected posture for the demo stack is `sandbox_first`.
+
+## Limits
+
+This flags risky surfaces; it does not prove a repo is benign.

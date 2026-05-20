@@ -1,6 +1,6 @@
 # MCP Pre-Audit Library
 
-These examples are public-safe install templates. They demonstrate the scanner on common MCP shapes without claiming that a specific upstream project is safe or unsafe.
+These examples are public-safe install templates. They demonstrate the scanner on common MCP shapes without claiming that a specific upstream project is benign or certified.
 
 Current templates:
 

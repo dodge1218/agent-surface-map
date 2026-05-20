@@ -9,7 +9,10 @@ const form = document.getElementById("scan-form");
 const input = document.getElementById("scan-url");
 const statusNode = document.getElementById("scan-status");
 const demoScan = document.getElementById("demo-scan");
+const verifiedDemo = document.getElementById("verified-demo");
+const copyContext = document.getElementById("copy-context");
 const DEMO_SCAN_URL = "https://github.com/dodge1218/agent-surface-demo-mcp";
+let currentInstallContext = "";
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -27,10 +30,27 @@ demoScan.addEventListener("click", async () => {
   await runScan(DEMO_SCAN_URL);
 });
 
+verifiedDemo.addEventListener("click", async () => {
+  const response = await fetch("verified-gemma-review.json");
+  render(await response.json());
+  statusNode.textContent = "Loaded a saved Gemma 4 review for the public demo fixture.";
+  document.querySelector(".verdict-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+copyContext.addEventListener("click", async () => {
+  if (!currentInstallContext) return;
+  await navigator.clipboard.writeText(currentInstallContext);
+  copyContext.textContent = "Copied";
+  setTimeout(() => {
+    copyContext.textContent = "Copy";
+  }, 1200);
+});
+
 async function runScan(url) {
   const button = form.querySelector("button");
   button.disabled = true;
   demoScan.disabled = true;
+  verifiedDemo.disabled = true;
   button.textContent = "Scanning";
   statusNode.textContent = "Cloning read-only, scanning config files, redacting secrets...";
 
@@ -51,6 +71,7 @@ async function runScan(url) {
   } finally {
     button.disabled = false;
     demoScan.disabled = false;
+    verifiedDemo.disabled = false;
     button.textContent = "Scan";
   }
 }
@@ -87,8 +108,19 @@ function decisionFor(score) {
   return { text: "Add carefully", detail: "Low-risk install", className: "allow" };
 }
 
+function installDecision(report) {
+  const review = report.gemma_review || {};
+  const verdict = review.install_verdict || decisionFor(report.risk_score || 0).verdict;
+  const labels = {
+    add_carefully: { text: "Add carefully", detail: "Low-risk install posture", className: "allow" },
+    sandbox_first: { text: "Sandbox first", detail: "Use isolation before install", className: "sandbox" },
+    do_not_add: { text: "Do not add", detail: "High-risk install posture", className: "block" },
+  };
+  return labels[verdict] || decisionFor(report.risk_score || 0);
+}
+
 function render(report) {
-  const decision = decisionFor(report.risk_score || 0);
+  const decision = installDecision(report);
   const decisionCard = document.querySelector(".decision-card");
   decisionCard.classList.remove("allow", "sandbox", "block");
   decisionCard.classList.add(decision.className);
@@ -100,9 +132,16 @@ function render(report) {
   document.getElementById("finding-count").textContent = `${(report.findings || []).length} findings`;
 
   const review = report.gemma_review || {};
+  const staticDecision = decisionFor(report.risk_score || 0);
+  document.getElementById("review-title").textContent = report.review_source === "gemma" ? "Gemma 4 install verdict" : "Fallback install review";
+  document.getElementById("core-review-label").textContent = report.review_source === "gemma" ? "Core Gemma review" : "Fallback review";
+  document.getElementById("install-verdict").textContent = `Decision: ${decision.text}`;
+  document.getElementById("install-reason").textContent = `Confidence: ${review.confidence || "low"} | Source: ${report.review_source || "fallback"}`;
+  document.getElementById("gemma-delta").textContent = review.why_gemma_changed_the_call || `Static scan suggested ${staticDecision.text}; no Gemma judgment was available.`;
   document.getElementById("summary").textContent = review.summary || "No narrative review found.";
   list(review.top_risks, "top-risks");
   list(review.hardening_plan || review.quick_wins, "hardening-plan");
+  renderInstallContext(report, decision, review);
   renderMcpServers(report.mcp_servers || []);
 
   const capabilities = document.getElementById("capabilities");
@@ -151,6 +190,16 @@ function render(report) {
   }
 }
 
+function renderInstallContext(report, decision, review) {
+  const constraints = review.agent_constraints || report.install_context?.agent_context || [];
+  const lines = [
+    `Install posture: ${label(review.install_verdict || decision.text).toLowerCase()}.`,
+    ...constraints,
+  ];
+  currentInstallContext = lines.join("\n");
+  document.getElementById("install-context-text").textContent = currentInstallContext || "No install constraints found.";
+}
+
 function renderMcpServers(servers) {
   document.getElementById("mcp-count").textContent = `${servers.length} server${servers.length === 1 ? "" : "s"}`;
   const node = document.getElementById("mcp-servers");
@@ -184,7 +233,7 @@ function renderMcpServers(servers) {
 
 function reviewMode(report) {
   if (report.review_source === "gemma") {
-    return "read-only local scan + Gemma 4 review";
+    return "read-only scan + live/saved Gemma 4 review";
   }
   if (report.gemma_error) {
     return "read-only scan + fallback review";
@@ -213,7 +262,7 @@ async function loadExamples() {
       </dl>
     `;
     card.querySelector("button").addEventListener("click", async () => {
-      statusNode.textContent = `Loaded pre-audit template: ${item.name}`;
+      statusNode.textContent = `Loaded example MCP review: ${item.name}`;
       const reportResponse = await fetch(item.report);
       render(await reportResponse.json());
       document.querySelector(".verdict-panel").scrollIntoView({ behavior: "smooth", block: "start" });

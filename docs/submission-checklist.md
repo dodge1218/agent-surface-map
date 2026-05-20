@@ -10,9 +10,9 @@
 - [ ] Explains why Gemma 4 is central.
 - [ ] Mentions model choice: Gemma 4 31B Dense for final install review.
 - [ ] Explains `review_source` honestly for Gemma vs fallback.
-- [ ] Mentions pre-audited MCP examples.
+- [ ] Mentions example MCP reviews.
 - [ ] Includes verification commands.
-- [ ] Includes no private OpenClaw/CyberClaw/bounty details.
+- [ ] Includes no private internal research details.
 
 ## Demo
 
@@ -22,7 +22,7 @@
 - [ ] Invalid URL returns a readable error.
 - [ ] Gemma verdict panel is visually obvious.
 - [ ] MCP workflow is visible on the page.
-- [ ] Pre-audit library cards load reports into the same verdict screen.
+- [ ] Example review cards load reports into the same verdict screen.
 
 ## Code
 

@@ -1,6 +1,6 @@
 # Source Idea Notes
 
-These are sanitized notes from the local OpenClaw workspace review. Do not copy private CyberClaw/OpenClaw operational details into the public submission.
+These are sanitized notes from the local idea review. Do not copy private operational details into the public submission.
 
 ## Contest Requirements Observed
 
@@ -26,7 +26,7 @@ Useful idea: quote-to-checkout, store-in-a-box, and approved catalogs are strong
 
 Why not the contest entry: a commerce agent would require external integrations, a believable deployment, and customer workflow polish. Good product direction, worse one-week contest risk.
 
-### CyberClaw PRDs and notes
+### Agent Security Notes
 
 Useful idea: local agents now have an operating surface: shell, browser, MCP, memory, skills, writable paths, repo instructions, network access, and provider spend.
 
@@ -48,7 +48,7 @@ Why this has contest energy:
 - Works locally with a demo repo.
 - Clear reason for Gemma 4: judgment and prioritization over a redacted technical inventory.
 - Builds from real local pain without publishing private details.
-- Can be expanded after the contest into a stronger OpenClaw/CyberClaw-adjacent product.
+- Can be expanded after the contest into a stronger developer-security product.
 
 ## What To Build Next
 
@@ -57,4 +57,3 @@ Why this has contest energy:
 - Add MCP-specific parsing instead of regex-only detection.
 - Add before/after remediation diff mode.
 - Capture a 60-90 second demo video.
-

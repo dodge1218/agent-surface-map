@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-19T19:50:52Z",
+  "generated_at": "2026-05-20T16:43:50Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/filesystem",
   "scanned_files": 2,
   "risk_score": 11,
@@ -50,6 +50,14 @@
   ],
   "gemma_review": {
     "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "install_verdict": "add_carefully",
+    "confidence": "low",
+    "why_gemma_changed_the_call": "Gemma was not used; deterministic fallback kept the static install posture.",
+    "agent_constraints": [
+      "Do not execute repository code during review.",
+      "Keep secret values out of prompts, reports, and logs.",
+      "Review filesystem mounts and prefer project-local read-only access."
+    ],
     "top_risks": [
       "filesystem tool surface appeared 1 time(s).",
       "broad filesystem access appeared 1 time(s)."

@@ -20,13 +20,16 @@
       <section class="hero">
         <div class="hero-copy">
           <span class="folio-label">Gemma 4 challenge build</span>
-          <h1>Is this tool safe to add?</h1>
+          <h1>Review this tool before you add it</h1>
           <p class="lede">Paste a GitHub or MCP repo link. Get a read-only install review before the tool reaches your shell, files, browser, or secrets.</p>
           <form id="scan-form" class="scan-form">
             <input id="scan-url" name="url" type="url" placeholder="https://github.com/org/mcp-server" autocomplete="off" />
             <button type="submit">Scan</button>
           </form>
-          <button id="demo-scan" class="demo-scan" type="button">Try demo MCP scan</button>
+          <div class="hero-actions">
+            <button id="demo-scan" class="demo-scan" type="button">Try live demo scan</button>
+            <button id="verified-demo" class="demo-scan verified" type="button">Load verified Gemma 4 review</button>
+          </div>
           <p id="scan-status" class="scan-status"></p>
         </div>
         <div class="hero-art" aria-label="Install decision preview">
@@ -65,13 +68,13 @@
           <span class="meta-label">Why Gemma 4</span>
           <h2>Scanner finds evidence. Gemma 4 makes the install call.</h2>
         </div>
-        <p>The model reads the redacted surface map and explains whether the tool should be added globally, sandboxed first, or rejected. That judgment layer is the product.</p>
+        <p>Gemma 4 reads the redacted surface map, connects combined risks, and returns the install posture and constraints your coding agent should follow.</p>
       </section>
 
       <section class="workflow-strip" aria-label="Developer workflow">
         <div>
           <span class="meta-label">Workflow integration</span>
-          <h2>Use the web scanner for quick checks. Use the MCP server inside your coding agent.</h2>
+          <h2>Paste MCP repo -> Gemma reviews install risk -> copy constraints for your agent.</h2>
         </div>
         <code>scan_github_tool(url) -> install_context -> safe agent constraints</code>
       </section>
@@ -112,11 +115,12 @@
         </div>
       </section>
 
-      <section class="example-strip" aria-label="Pre-audited MCP examples">
+      <section class="example-strip" aria-label="Example MCP reviews">
         <div class="section-heading">
           <div>
-            <span class="meta-label">Pre-audit library</span>
+            <span class="meta-label">Example MCP reviews</span>
             <h2>Common MCP installs to review before adding</h2>
+            <p class="section-note">Representative templates, not safety certifications.</p>
           </div>
           <span class="count-pill">8 templates</span>
         </div>
@@ -130,10 +134,18 @@
           </svg>
           <div class="gemma-kicker">
             <span class="gemma-dot"></span>
-            <span>Core review</span>
+            <span id="core-review-label">Core review</span>
           </div>
-          <h2>Gemma 4 install verdict</h2>
+          <h2 id="review-title">Gemma 4 install verdict</h2>
+          <div class="install-callout">
+            <strong id="install-verdict">Install posture pending</strong>
+            <small id="install-reason">Waiting on report.</small>
+          </div>
           <p id="summary">Loading report...</p>
+          <div class="gemma-delta">
+            <span class="meta-label">Static scan vs model judgment</span>
+            <p id="gemma-delta">Loading comparison...</p>
+          </div>
           <div class="action-grid">
             <div>
               <h3>Top Risks</h3>
@@ -143,6 +155,13 @@
               <h3>Hardening Plan</h3>
               <ul id="hardening-plan"></ul>
             </div>
+          </div>
+          <div class="install-context">
+            <div>
+              <h3>Copy install context</h3>
+              <button id="copy-context" type="button">Copy</button>
+            </div>
+            <pre id="install-context-text">Waiting on scan.</pre>
           </div>
         </article>
 

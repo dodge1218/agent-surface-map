@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-05-20T16:45:00Z",
+  "target": "dodge1218/agent-surface-demo-mcp",
+  "source_url": "https://github.com/dodge1218/agent-surface-demo-mcp",
+  "scanned_files": 4,
+  "risk_score": 45,
+  "category_counts": {
+    "browser_access": 3,
+    "secret_reference": 2,
+    "write_access": 1
+  },
+  "rule_counts": {
+    "filesystem_tool_surface": 1,
+    "browser_session_surface": 1,
+    "cloud_credential_surface": 1
+  },
+  "mcp_servers": [
+    {
+      "name": "demo-browser",
+      "path": "mcp.json",
+      "command": "node",
+      "args": ["./tools/browser-agent.js"],
+      "env_keys": ["BROWSER_PROFILE"],
+      "risk_hints": ["local process", "browser/session"]
+    },
+    {
+      "name": "demo-filesystem",
+      "path": "mcp.json",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "env_keys": ["GITHUB_TOKEN"],
+      "risk_hints": ["package runner", "credential reference"]
+    }
+  ],
+  "findings": [],
+  "rules": [],
+  "gemma_review": {
+    "summary": "The agent surface analysis reveals a risk score of 45, primarily driven by overly permissive filesystem access and insecure browser profile management within mcp.json. The configuration grants the agent access to home directory paths and utilizes a persistent browser profile, increasing the risk of session hijacking or unauthorized data exfiltration.",
+    "install_verdict": "sandbox_first",
+    "confidence": "high",
+    "why_gemma_changed_the_call": "Static scanning found browser profile reuse, filesystem access, and token names separately. Gemma connected those into one install posture: sandbox first, because browser session state plus local file access plus credentials can become session or credential exposure if installed globally.",
+    "agent_constraints": [
+      "Do not install globally on first run.",
+      "Use a clean browser profile with no personal sessions or saved cookies.",
+      "Mount only the project directory needed for the workflow.",
+      "Pass token names by reference only; never expose real values to the model.",
+      "Require human approval before shell commands or package-runner installs.",
+      "Re-scan the final MCP config before writing it into a persistent agent profile."
+    ],
+    "top_risks": [
+      "Browser profile reuse can expose logged-in sessions or cookies.",
+      "Filesystem access can exceed the project boundary if mounted too broadly.",
+      "Credential names such as GITHUB_TOKEN require scoped tokens and value redaction."
+    ],
+    "quick_wins": [
+      "Use a clean browser profile.",
+      "Keep filesystem mounts project-local.",
+      "Use scoped, disposable credentials."
+    ],
+    "hardening_plan": [
+      "Run the MCP in a disposable workspace first.",
+      "Review the final MCP config before saving it globally.",
+      "Approve shell commands one at a time until the tool is trusted."
+    ]
+  },
+  "review_source": "gemma",
+  "proof_note": "Saved public proof fixture from a successful Gemma 4 review path. Fresh scans remain live and may fall back if the provider rate-limits."
+}

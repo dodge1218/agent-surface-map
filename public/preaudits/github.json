@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-19T19:50:52Z",
+  "generated_at": "2026-05-20T16:43:51Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/github",
   "scanned_files": 2,
   "risk_score": 9,
@@ -33,7 +33,7 @@
       "severity": "medium",
       "path": "mcp.json",
       "line": 7,
-      "evidence": "\"GITHUB_TOKEN\": <redacted>",
+      "evidence": "\"GITHUB_TOKEN\": <redacted>}\"",
       "recommendation": "Reference secret names only in reports; never send values to model context."
     }
   ],
@@ -45,12 +45,20 @@
       "score": 6,
       "path": "mcp.json",
       "line": 7,
-      "evidence": "\"GITHUB_TOKEN\": <redacted>",
+      "evidence": "\"GITHUB_TOKEN\": <redacted>}\"",
       "recommendation": "Pass cloud credentials only through scoped, audited mechanisms; never expose values to model context."
     }
   ],
   "gemma_review": {
     "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "install_verdict": "add_carefully",
+    "confidence": "low",
+    "why_gemma_changed_the_call": "Gemma was not used; deterministic fallback kept the static install posture.",
+    "agent_constraints": [
+      "Do not execute repository code during review.",
+      "Keep secret values out of prompts, reports, and logs.",
+      "Pass secret names by reference only; never expose values to the model."
+    ],
     "top_risks": [
       "secret reference appeared 1 time(s).",
       "cloud credential surface appeared 1 time(s)."

@@ -23,6 +23,7 @@ from surface_map import review_report, safe_install_context, scan
 URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
 MAX_RESPONSE_BYTES = 180_000
 LOCAL_SCAN_ROOTS = [Path(p).expanduser().resolve() for p in os.environ.get("ASM_ALLOWED_ROOTS", "").split(os.pathsep) if p]
+DEFAULT_LOCAL_ROOT = Path.cwd().resolve()
 
 
 TOOLS = [
@@ -100,8 +101,9 @@ def assert_allowed_local_path(root: Path) -> None:
         raise ValueError("refusing to scan filesystem root")
     if any(part in {".ssh", ".gnupg", ".aws", ".config", ".npm", ".cache"} for part in root.parts):
         raise ValueError("refusing to scan credential or profile directories")
-    if LOCAL_SCAN_ROOTS and not any(root == allowed or root.is_relative_to(allowed) for allowed in LOCAL_SCAN_ROOTS):
-        allowed_text = ", ".join(str(path) for path in LOCAL_SCAN_ROOTS)
+    allowed_roots = LOCAL_SCAN_ROOTS or [DEFAULT_LOCAL_ROOT]
+    if not any(root == allowed or root.is_relative_to(allowed) for allowed in allowed_roots):
+        allowed_text = ", ".join(str(path) for path in allowed_roots)
         raise ValueError(f"path is outside ASM_ALLOWED_ROOTS: {allowed_text}")
 
 

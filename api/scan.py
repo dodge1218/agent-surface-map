@@ -21,6 +21,8 @@ from surface_map import review_report, scan  # noqa: E402
 
 MAX_BODY = 8192
 MAX_ZIP_BYTES = 8 * 1024 * 1024
+MAX_EXTRACTED_BYTES = 24 * 1024 * 1024
+MAX_ARCHIVE_FILES = 800
 URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
 SCAN_RATE: dict[str, list[float]] = {}
 GEMMA_RATE: dict[str, list[float]] = {}
@@ -87,7 +89,7 @@ def scan_url(url: str, *, allow_gemma: bool | None = None) -> dict:
         extract_root = tmp_path / "repo"
         extract_root.mkdir()
         with zipfile.ZipFile(zip_path) as archive:
-            archive.extractall(extract_root)
+            safe_extract(archive, extract_root)
         roots = [path for path in extract_root.iterdir() if path.is_dir()]
         if not roots:
             raise ValueError("repository archive was empty")
@@ -96,7 +98,36 @@ def scan_url(url: str, *, allow_gemma: bool | None = None) -> dict:
         report["source_url"] = url
         report["target"] = f"{owner}/{repo}"
         review_report(report, allow_gemma=allow_gemma)
+        strip_public_report(report)
         return report
+
+
+def safe_extract(archive: zipfile.ZipFile, destination: Path) -> None:
+    destination = destination.resolve()
+    total = 0
+    files = 0
+    for member in archive.infolist():
+        name = member.filename
+        target = (destination / name).resolve()
+        if not str(target).startswith(str(destination) + os.sep):
+            raise ValueError("repository archive contains an unsafe path")
+        if name.startswith("/") or ".." in Path(name).parts:
+            raise ValueError("repository archive contains a path traversal entry")
+        mode = member.external_attr >> 16
+        if (mode & 0o170000) in {0o120000, 0o020000, 0o060000}:
+            raise ValueError("repository archive contains an unsupported special file")
+        if not member.is_dir():
+            files += 1
+            total += member.file_size
+            if files > MAX_ARCHIVE_FILES:
+                raise ValueError("repository archive has too many files for the demo scanner")
+            if total > MAX_EXTRACTED_BYTES:
+                raise ValueError("repository archive expands too large for the demo scanner")
+    archive.extractall(destination)
+
+
+def strip_public_report(report: dict) -> None:
+    report.pop("gemma_prompt_preview", None)
 
 
 def client_ip_from_headers(headers) -> str:

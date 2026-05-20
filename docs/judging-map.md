@@ -12,7 +12,7 @@ The DEV Gemma 4 Challenge build prompt asks for useful or creative projects wher
 Agent Surface Map uses deterministic scanning for evidence and Gemma 4 for judgment. That separation is intentional:
 
 - code is better at repeatable file inventory and redaction
-- Gemma is better at explaining risk, prioritizing tradeoffs, and turning findings into developer-safe install guidance
+- Gemma is better at making constrained install-policy judgments over combined risks and turning findings into developer-safe install guidance
 
 Model choice: Gemma 4 31B Dense for final review. The task benefits from reasoning and prioritization more than edge latency.
 
@@ -41,14 +41,14 @@ The product shape is also agent-native: a web check for humans plus an MCP serve
 
 ## UX
 
-The app has one primary question: "Is this tool safe to add?"
+The app has one primary question: "What install posture should this tool get before it reaches my agent?"
 
 The UI keeps the workflow direct:
 
 - paste a GitHub repo URL
 - scan read-only
-- review verdict, score, risks, and install guidance
-- load common MCP pre-audit examples
+- install posture, score, risks, and copyable agent constraints
+- load common MCP example reviews
 - use the MCP server inside a coding agent for real workflow integration
 
 ## DNP Boundary

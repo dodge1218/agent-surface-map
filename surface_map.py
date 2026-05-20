@@ -158,8 +158,15 @@ def severity(score: int) -> str:
 
 
 def safe_excerpt(line: str) -> str:
-    redacted = re.sub(r"([A-Z][A-Z0-9_]{6,})=([^\s]+)", r"\1=<redacted>", line.strip())
-    redacted = re.sub(r"(api[_-]?key|token|secret|password)(['\"]?\s*[:=]\s*)['\"][^'\"]+['\"]", r"\1\2<redacted>", redacted, flags=re.I)
+    redacted = line.strip()
+    redacted = re.sub(r"-----BEGIN [A-Z ]*PRIVATE KEY-----.*", "-----BEGIN PRIVATE KEY-----<redacted>", redacted, flags=re.I)
+    redacted = re.sub(r"\b(Bearer\s+)[A-Za-z0-9._~+/=-]{12,}", r"\1<redacted>", redacted, flags=re.I)
+    redacted = re.sub(r"\b(gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,})\b", "<redacted-token>", redacted)
+    redacted = re.sub(r"\b(sk-[A-Za-z0-9_-]{16,})\b", "<redacted-token>", redacted)
+    redacted = re.sub(r"\b(npm_[A-Za-z0-9]{20,})\b", "<redacted-token>", redacted)
+    redacted = re.sub(r"\b(eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)\b", "<redacted-jwt>", redacted)
+    redacted = re.sub(r"([A-Za-z_][A-Za-z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY|ACCESS_KEY|PRIVATE_KEY|CREDENTIAL)[A-Za-z0-9_]*)=([^\s]+)", r"\1=<redacted>", redacted, flags=re.I)
+    redacted = re.sub(r"(api[_-]?key|token|secret|password|private[_-]?key|credential)(['\"]?\s*[:=]\s*)['\"]?[^'\"\s,}]+['\"]?", r"\1\2<redacted>", redacted, flags=re.I)
     redacted = re.sub(r"([a-z][a-z0-9+.-]*://[^:/\s]+:)([^@\s]+)(@)", r"\1<redacted>\3", redacted, flags=re.I)
     return redacted[:220]
 
@@ -311,9 +318,11 @@ def scan(root: Path) -> dict[str, Any]:
 
 
 def build_gemma_prompt(report: dict[str, Any]) -> str:
+    static_decision = install_decision(int(report.get("risk_score", 0)))
     compact = {
         "scanned_files": report["scanned_files"],
         "risk_score": report["risk_score"],
+        "static_install_decision": static_decision,
         "category_counts": report["category_counts"],
         "rule_counts": report.get("rule_counts", {}),
         "findings": report["findings"][:30],
@@ -322,8 +331,12 @@ def build_gemma_prompt(report: dict[str, Any]) -> str:
     }
     return (
         "You are Gemma 4 acting as a pragmatic local agent-security reviewer. "
-        "Analyze this redacted agent-surface inventory. Return JSON with keys: "
-        "summary, top_risks, quick_wins, hardening_plan. Be specific and do not invent files.\n\n"
+        "Analyze this redacted agent-surface inventory and make the install-policy judgment. "
+        "The static scanner is evidence collection, not the final product. Return valid JSON with keys: "
+        "summary, install_verdict, confidence, why_gemma_changed_the_call, agent_constraints, "
+        "top_risks, quick_wins, hardening_plan. install_verdict must be one of "
+        "add_carefully, sandbox_first, do_not_add. confidence must be low, medium, or high. "
+        "Be specific, connect combined risks, and do not invent files.\n\n"
         + json.dumps(compact, indent=2)
     )
 
@@ -373,6 +386,35 @@ def parse_gemma_content(content: str) -> dict[str, Any]:
         return {"summary": content, "top_risks": [], "quick_wins": [], "hardening_plan": []}
 
 
+def normalize_review(review: dict[str, Any], report: dict[str, Any], source: str) -> dict[str, Any]:
+    static = install_decision(int(report.get("risk_score", 0)))
+    verdict = str(review.get("install_verdict") or static["verdict"])
+    if verdict not in {"add_carefully", "sandbox_first", "do_not_add"}:
+        verdict = static["verdict"]
+    confidence = str(review.get("confidence") or ("medium" if source == "gemma" else "low"))
+    if confidence not in {"low", "medium", "high"}:
+        confidence = "medium" if source == "gemma" else "low"
+    constraints = review.get("agent_constraints")
+    if not isinstance(constraints, list) or not constraints:
+        constraints = agent_context(report)
+    normalized = {
+        "summary": str(review.get("summary") or "Install posture review completed."),
+        "install_verdict": verdict,
+        "confidence": confidence,
+        "why_gemma_changed_the_call": str(
+            review.get("why_gemma_changed_the_call")
+            or ("Gemma was not used; deterministic fallback kept the static install posture." if source == "fallback" else "Gemma kept the static posture and clarified the install constraints.")
+        ),
+        "agent_constraints": [str(item) for item in constraints[:12]],
+        "top_risks": [str(item) for item in review.get("top_risks", [])[:8]] if isinstance(review.get("top_risks", []), list) else [],
+        "quick_wins": [str(item) for item in review.get("quick_wins", [])[:8]] if isinstance(review.get("quick_wins", []), list) else [],
+        "hardening_plan": [str(item) for item in review.get("hardening_plan", [])[:8]] if isinstance(review.get("hardening_plan", []), list) else [],
+    }
+    if not normalized["hardening_plan"]:
+        normalized["hardening_plan"] = normalized["quick_wins"]
+    return normalized
+
+
 def gemma_configured() -> bool:
     return bool(os.environ.get("GEMMA_API_KEY") and os.environ.get("GEMMA_BASE_URL"))
 
@@ -383,8 +425,13 @@ def fallback_review(report: dict[str, Any]) -> dict[str, Any]:
     for name, count in report.get("rule_counts", {}).items():
         combined[name] = combined.get(name, 0) + count
     top = sorted(combined.items(), key=lambda item: item[1], reverse=True)[:3]
+    decision = install_decision(int(report.get("risk_score", 0)))
     return {
         "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+        "install_verdict": decision["verdict"],
+        "confidence": "low",
+        "why_gemma_changed_the_call": "Gemma was not used; deterministic fallback kept the static install posture.",
+        "agent_constraints": agent_context(report),
         "top_risks": [f"{name.replace('_', ' ')} appeared {count} time(s)." for name, count in top],
         "quick_wins": [
             "Run read-only before granting write access.",
@@ -405,16 +452,15 @@ def review_report(report: dict[str, Any], *, allow_gemma: bool | None = None) ->
         allow_gemma = gemma_configured()
     if allow_gemma:
         prompt = build_gemma_prompt(report)
-        report["gemma_prompt_preview"] = prompt
         try:
-            report["gemma_review"] = call_gemma(prompt)
+            report["gemma_review"] = normalize_review(call_gemma(prompt), report, "gemma")
             report["review_source"] = "gemma"
             report.pop("gemma_error", None)
             return report
         except (RuntimeError, urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError) as exc:
             report["gemma_error"] = str(exc)
 
-    report["gemma_review"] = fallback_review(report)
+    report["gemma_review"] = normalize_review(fallback_review(report), report, "fallback")
     report["review_source"] = "fallback"
     return report
 
@@ -460,15 +506,52 @@ def agent_context(report: dict[str, Any]) -> list[str]:
 
 
 def safe_install_context(report: dict[str, Any]) -> dict[str, Any]:
-    decision = install_decision(int(report.get("risk_score", 0)))
+    static_decision = install_decision(int(report.get("risk_score", 0)))
+    review = report.get("gemma_review") or fallback_review(report)
+    review_verdict = review.get("install_verdict") if isinstance(review, dict) else None
+    decision = {**static_decision}
+    if review_verdict in {"add_carefully", "sandbox_first", "do_not_add"}:
+        decision["verdict"] = review_verdict
+        decision["label"] = {
+            "add_carefully": "Add carefully",
+            "sandbox_first": "Sandbox first",
+            "do_not_add": "Do not add",
+        }[review_verdict]
+        decision["reason"] = "Gemma install-policy review." if report.get("review_source") == "gemma" else static_decision["reason"]
+    constraints = review.get("agent_constraints") if isinstance(review, dict) else None
+    if not isinstance(constraints, list) or not constraints:
+        constraints = agent_context(report)
     return {
         **decision,
+        "static_verdict": static_decision["verdict"],
+        "review_source": report.get("review_source", "fallback"),
+        "confidence": review.get("confidence", "low") if isinstance(review, dict) else "low",
         "risk_score": report.get("risk_score", 0),
         "risk_signals": report.get("category_counts", {}),
         "public_rules": report.get("rule_counts", {}),
         "mcp_servers": report.get("mcp_servers", []),
-        "agent_context": agent_context(report),
-        "gemma_review": report.get("gemma_review") or fallback_review(report),
+        "agent_context": constraints,
+        "policy": policy_block(report, constraints),
+        "gemma_review": review,
+    }
+
+
+def policy_block(report: dict[str, Any], constraints: list[str]) -> dict[str, Any]:
+    categories = set(report.get("category_counts", {}))
+    rule_categories = set(report.get("rule_counts", {}))
+    requires_approval = []
+    if "shell_access" in categories or "shell_tool_exposure" in rule_categories:
+        requires_approval.append("shell_command")
+    if "write_access" in categories:
+        requires_approval.append("write_access")
+    return {
+        "allowed_paths": ["project directory only"],
+        "denied_paths": ["home directory", "filesystem root", "credential/profile directories"],
+        "secret_env_keys": sorted({key for server in report.get("mcp_servers", []) for key in server.get("env_keys", [])}),
+        "browser_profile_policy": "clean profile only" if "browser_access" in categories or "browser_session_surface" in rule_categories else "not detected",
+        "network_policy": "allowlist outbound hosts" if "network_access" in categories else "not detected",
+        "required_approvals": requires_approval,
+        "constraints": constraints[:12],
     }
 
 

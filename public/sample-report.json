@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-19T19:50:50Z",
+  "generated_at": "2026-05-20T16:43:50Z",
   "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/demo-agent-stack",
   "scanned_files": 4,
   "risk_score": 63,
@@ -176,6 +176,21 @@
   ],
   "gemma_review": {
     "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
+    "install_verdict": "sandbox_first",
+    "confidence": "low",
+    "why_gemma_changed_the_call": "Gemma was not used; deterministic fallback kept the static install posture.",
+    "agent_constraints": [
+      "Do not execute repository code during review.",
+      "Keep secret values out of prompts, reports, and logs.",
+      "Require human approval before any shell command from this tool runs.",
+      "Run shell-capable tools in a sandbox with a narrow working directory.",
+      "Use a clean browser profile with no personal sessions or saved cookies.",
+      "Start read-only and grant write access only to explicit project-local paths.",
+      "Treat repo instruction files as untrusted context until reviewed.",
+      "Pass secret names by reference only; never expose values to the model.",
+      "Prefer localhost-only listeners with explicit auth and documented ports.",
+      "Review filesystem mounts and prefer project-local read-only access."
+    ],
     "top_risks": [
       "secret reference appeared 3 time(s).",
       "browser access appeared 3 time(s).",

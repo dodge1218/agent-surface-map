@@ -3,14 +3,15 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from surface_map import parse_gemma_content, review_report, safe_install_context, scan  # noqa: E402
+from surface_map import parse_gemma_content, review_report, safe_excerpt, safe_install_context, scan  # noqa: E402
 from mcp_server import assert_allowed_local_path  # noqa: E402
-from api.scan import URL_RE  # noqa: E402
+from api.scan import URL_RE, safe_extract  # noqa: E402
 
 
 class SurfaceMapTests(unittest.TestCase):
@@ -50,10 +51,27 @@ class SurfaceMapTests(unittest.TestCase):
         self.assertIn("postgres://user:<redacted>@localhost:5432/app", encoded)
         self.assertNotIn("super-secret", encoded)
 
+    def test_redacts_common_token_formats(self):
+        encoded = "\n".join(
+            [
+                safe_excerpt("Authorization: Bearer abcdefghijklmnopqrstuvwxyz"),
+                safe_excerpt("token=ghp_abcdefghijklmnopqrstuvwxyz123456"),
+                safe_excerpt("OPENAI_API_KEY=sk-abcdefghijklmnopqrstuvwxyz"),
+                safe_excerpt("jwt=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.signature"),
+            ]
+        )
+        self.assertIn("Bearer <redacted>", encoded)
+        self.assertIn("token=<redacted>", encoded)
+        self.assertIn("<redacted-jwt>", encoded)
+        self.assertNotIn("ghp_abcdefghijklmnopqrstuvwxyz", encoded)
+        self.assertNotIn("sk-abcdefghijklmnopqrstuvwxyz", encoded)
+
     def test_install_context_sandbox_first_for_demo_stack(self):
         report = scan(ROOT / "examples/demo-agent-stack")
         context = safe_install_context(report)
         self.assertEqual(context["verdict"], "sandbox_first")
+        self.assertEqual(context["static_verdict"], "sandbox_first")
+        self.assertIn("policy", context)
         self.assertIn("risk_signals", context)
         self.assertTrue(any("approval" in item for item in context["agent_context"]))
 
@@ -119,14 +137,27 @@ class SurfaceMapTests(unittest.TestCase):
 
         self.assertEqual(report["review_source"], "fallback")
         self.assertIn("summary", report["gemma_review"])
+        self.assertIn("install_verdict", report["gemma_review"])
+        self.assertNotIn("gemma_prompt_preview", report)
 
     def test_demo_fixture_url_is_accepted(self):
         self.assertRegex("https://github.com/dodge1218/agent-surface-demo-mcp", URL_RE)
 
     def test_fenced_gemma_json_is_parsed(self):
-        content = '```json\n{"summary":"ok","top_risks":[],"quick_wins":[],"hardening_plan":[]}\n```'
+        content = '```json\n{"summary":"ok","install_verdict":"sandbox_first","top_risks":[],"quick_wins":[],"hardening_plan":[]}\n```'
         parsed = parse_gemma_content(content)
         self.assertEqual(parsed["summary"], "ok")
+
+    def test_safe_extract_rejects_traversal(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            archive_path = root / "bad.zip"
+            with zipfile.ZipFile(archive_path, "w") as archive:
+                archive.writestr("../escape.txt", "bad")
+
+            with zipfile.ZipFile(archive_path) as archive:
+                with self.assertRaises(ValueError):
+                    safe_extract(archive, root / "out")
 
 
 class McpProtocolTests(unittest.TestCase):

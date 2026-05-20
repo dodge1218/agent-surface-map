@@ -42,7 +42,7 @@ Returns a JSON report with:
 - risk signals
 - review source
 - redacted evidence
-- safe install context for the calling agent
+- install constraints for the calling agent
 
 ### `scan_local_tool`
 
