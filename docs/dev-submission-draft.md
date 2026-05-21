@@ -9,12 +9,18 @@ tags: devchallenge, gemmachallenge, gemma
 So the thing I built is pretty simple:
 
 ```text
-Paste repo. Scanner maps surface. Gemma decides posture. Agent installs safer.
+Before your coding agent installs a new MCP, ask Gemma what it is about to trust.
 ```
 
-Agent Surface Map is a pre-install review for MCP servers and agent tools. Before a coding agent gets a new browser tool, filesystem mount, shell helper, Gmail/GitHub integration, or repo instruction pack, the app runs a read-only scan and asks: what posture should this install get?
+Agent Surface Map is a pre-install review for MCP servers and agent tools. It does not try to prove a repo is safe. It answers a more practical question:
 
-The actual loop is:
+```text
+Should this be added carefully, sandboxed first, or not added?
+```
+
+There are already MCP scanners. That is good. I wanted the missing workflow layer: before a coding agent installs a new MCP, have Gemma turn the surface map into install constraints, then validate the final config before it gets written.
+
+The loop:
 
 ```text
 scan repo -> Gemma decides install posture -> agent validates final config before writing it
@@ -59,6 +65,8 @@ Coding agents changed the shape of local risk. A repo is not just code anymore. 
 That is basically a tiny operating surface on your laptop.
 
 So this is the safety pause before the agent gets more power. Not a malware sandbox. Not a full audit. Just a fast answer to: should this be added carefully, sandboxed first, or rejected?
+
+And yeah, you can paste a config into ChatGPT and ask for advice. The difference here is that the review is wired into the install path. The agent can scan, get a structured posture, draft the config, and then check that exact config before it writes anything.
 
 ## Demo path
 
