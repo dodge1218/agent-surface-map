@@ -1,5 +1,11 @@
 # Submission Checklist
 
+Submitted:
+
+```text
+https://dev.to/vonb/agent-surface-map-gemma-4-review-before-you-install-an-mcp-1nbn
+```
+
 ## DEV Post
 
 - [ ] Title uses project name and Gemma 4.
