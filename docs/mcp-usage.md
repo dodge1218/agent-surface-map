@@ -66,6 +66,29 @@ Input:
 
 Use this when an agent already has a scan report and wants only the concise workflow constraints.
 
+### `validate_install_plan`
+
+Input:
+
+```json
+{
+  "report": {},
+  "proposed_config": {
+    "global_install": false,
+    "required_approvals": ["shell_command"],
+    "mcpServers": {}
+  }
+}
+```
+
+Use this after scanning and before writing local MCP/client config. It checks the final plan against the scan-derived policy and returns:
+
+- `pass`
+- `needs_changes`
+- `block`
+
+It blocks common unsafe plans such as global install after `sandbox_first`, broad local paths, Docker socket exposure, and secret values embedded directly in config.
+
 ## Intended Agent Workflow
 
 ```text
@@ -73,7 +96,9 @@ User: Add this MCP to my workflow: https://github.com/org/tool
 Agent: I will scan it first with Agent Surface Map.
 Agent calls: scan_github_tool(url)
 Agent receives: sandbox_first / do_not_add / add_carefully plus constraints
-Agent follows the returned context before editing config or running install commands.
+Agent drafts config.
+Agent calls: validate_install_plan(report, proposed_config)
+Agent fixes blockers before editing config or running install commands.
 ```
 
 ## Smoke Test

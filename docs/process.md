@@ -25,6 +25,8 @@ Paste repo. Scanner maps surface. Gemma decides posture. Agent installs safer.
    - risk signals
    - evidence
    - safe workflow constraints
+7. Coding agent drafts the final config.
+8. `validate_install_plan` checks that config against the scan-derived policy before anything is written.
 
 ## Two Interfaces
 
@@ -43,7 +45,7 @@ Use this for demos, review, and challenge judging.
 The MCP server is for real developer workflow:
 
 ```text
-coding agent -> scan_github_tool(url) -> install_context -> constrained install plan
+coding agent -> scan_github_tool(url) -> install_context -> validate_install_plan -> constrained install
 ```
 
 Use this before a coding agent edits MCP config or runs install commands.

@@ -17,7 +17,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
-from surface_map import review_report, safe_install_context, scan
+from surface_map import review_report, safe_install_context, scan, validate_install_plan
 
 
 URL_RE = re.compile(r"^https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/?$")
@@ -58,6 +58,18 @@ TOOLS = [
                 "report": {"type": "object", "description": "Report object returned by scan_local_tool or scan_github_tool."},
             },
             "required": ["report"],
+        },
+    },
+    {
+        "name": "validate_install_plan",
+        "description": "Check a proposed MCP/client config against a previous scan before the coding agent writes it.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "report": {"type": "object", "description": "Report object returned by scan_local_tool or scan_github_tool."},
+                "proposed_config": {"description": "The final MCP/client config or config fragment the agent wants to write."},
+            },
+            "required": ["report", "proposed_config"],
         },
     },
 ]
@@ -180,6 +192,8 @@ def call_tool(name: str, arguments: dict) -> dict:
         return text_result(scan_github(arguments["url"]))
     if name == "generate_safe_install_context":
         return text_result(safe_install_context(arguments["report"]))
+    if name == "validate_install_plan":
+        return text_result(validate_install_plan(arguments["report"], arguments["proposed_config"]))
     raise ValueError(f"unknown tool: {name}")
 
 

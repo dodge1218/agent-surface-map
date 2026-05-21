@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from surface_map import parse_gemma_content, review_report, safe_excerpt, safe_install_context, scan  # noqa: E402
+from surface_map import parse_gemma_content, review_report, safe_excerpt, safe_install_context, scan, validate_install_plan  # noqa: E402
 from mcp_server import assert_allowed_local_path  # noqa: E402
 from api.scan import URL_RE, safe_extract  # noqa: E402
 
@@ -74,6 +74,44 @@ class SurfaceMapTests(unittest.TestCase):
         self.assertIn("policy", context)
         self.assertIn("risk_signals", context)
         self.assertTrue(any("approval" in item for item in context["agent_context"]))
+
+    def test_validate_install_plan_blocks_broad_paths_and_secret_values(self):
+        report = scan(ROOT / "examples/demo-agent-stack")
+        plan = {
+            "global_install": True,
+            "mcpServers": {
+                "browser": {
+                    "command": "node",
+                    "args": ["server.js", "--user-data-dir", "/home/me/.config/chrome"],
+                    "env": {"BROWSER_PROFILE": "default", "GITHUB_TOKEN": "ghp_realvalue1234567890"},
+                }
+            },
+        }
+
+        result = validate_install_plan(report, plan)
+
+        self.assertEqual(result["decision"], "block")
+        self.assertTrue(any("global install" in item for item in result["blockers"]))
+        self.assertTrue(any("broad local paths" in item for item in result["blockers"]))
+        self.assertTrue(any("secret value" in item for item in result["blockers"]))
+
+    def test_validate_install_plan_allows_placeholder_project_scoped_plan(self):
+        report = scan(ROOT / "examples/demo-agent-stack")
+        plan = {
+            "global_install": False,
+            "required_approvals": ["shell_command", "write_access"],
+            "mcpServers": {
+                "filesystem": {
+                    "command": "npx",
+                    "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+                    "env": {"BROWSER_PROFILE": "${BROWSER_PROFILE}"},
+                }
+            },
+        }
+
+        result = validate_install_plan(report, plan)
+
+        self.assertNotEqual(result["decision"], "block")
 
     def test_refuses_home_profile_paths(self):
         with self.assertRaises(ValueError):
@@ -184,6 +222,7 @@ class McpProtocolTests(unittest.TestCase):
         tool_names = {tool["name"] for tool in responses[1]["result"]["tools"]}
         self.assertIn("scan_local_tool", tool_names)
         self.assertIn("scan_github_tool", tool_names)
+        self.assertIn("validate_install_plan", tool_names)
 
     def test_scan_local_tool(self):
         responses, _ = self.call_server(
@@ -204,6 +243,30 @@ class McpProtocolTests(unittest.TestCase):
         payload = json.loads(text)
         self.assertEqual(payload["install_context"]["verdict"], "sandbox_first")
         self.assertIn("shell_access", payload["category_counts"])
+
+    def test_validate_install_plan_tool(self):
+        report = scan(ROOT / "examples/demo-agent-stack")
+        review_report(report, allow_gemma=False)
+        responses, _ = self.call_server(
+            [
+                {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}},
+                {
+                    "jsonrpc": "2.0",
+                    "id": 2,
+                    "method": "tools/call",
+                    "params": {
+                        "name": "validate_install_plan",
+                        "arguments": {
+                            "report": report,
+                            "proposed_config": {"global_install": True, "mcpServers": {"bad": {"args": ["/home/me"]}}},
+                        },
+                    },
+                },
+            ]
+        )
+        text = responses[1]["result"]["content"][0]["text"]
+        payload = json.loads(text)
+        self.assertEqual(payload["decision"], "block")
 
 
 if __name__ == "__main__":

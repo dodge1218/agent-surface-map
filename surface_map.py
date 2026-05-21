@@ -536,6 +536,93 @@ def safe_install_context(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def validate_install_plan(report: dict[str, Any], proposed_config: Any) -> dict[str, Any]:
+    """Check a final proposed MCP/client config against the scan-derived policy."""
+    config = parse_plan_config(proposed_config)
+    context = safe_install_context(report)
+    policy = context["policy"]
+    blockers: list[str] = []
+    warnings: list[str] = []
+    required_changes: list[str] = []
+
+    if context["verdict"] == "do_not_add":
+        blockers.append("Scan posture is do_not_add; do not write this install plan.")
+    if config.get("global_install") is True and context["verdict"] == "sandbox_first":
+        blockers.append("Plan requests global install while scan posture is sandbox_first.")
+
+    text = json.dumps(config, sort_keys=True)
+    if re.search(r"(/home|/Users|/etc|/var/run|~/?|C:\\\\)", text, re.I):
+        blockers.append("Plan includes broad local paths; mount only the project directory.")
+    if re.search(r"(docker\.sock|/var/run/docker\.sock)", text, re.I):
+        blockers.append("Plan exposes Docker socket access.")
+    if re.search(r"(--user-data-dir|BROWSER_PROFILE|Default/Profile|cookies|storageState)", text, re.I):
+        required_changes.append("Use a clean browser profile with no personal sessions or saved cookies.")
+    if re.search(r"\b(bash|sh|zsh|powershell|cmd|exec|subprocess|child_process|terminal)\b", text, re.I):
+        required_changes.append("Require human approval before shell commands from this tool run.")
+    if leaks_secret_value(config, set(policy.get("secret_env_keys", []))):
+        blockers.append("Plan appears to include a secret value; use env key names or placeholders only.")
+
+    declared_approvals = {str(item) for item in config.get("required_approvals", [])} if isinstance(config.get("required_approvals"), list) else set()
+    for approval in policy.get("required_approvals", []):
+        if approval not in declared_approvals:
+            warnings.append(f"Plan does not declare required approval: {approval}.")
+
+    decision = "pass"
+    if blockers:
+        decision = "block"
+    elif required_changes or warnings:
+        decision = "needs_changes"
+
+    return {
+        "decision": decision,
+        "install_posture": context["verdict"],
+        "blockers": blockers,
+        "required_changes": required_changes,
+        "warnings": warnings,
+        "policy_checked": {
+            "allowed_paths": policy.get("allowed_paths", []),
+            "denied_paths": policy.get("denied_paths", []),
+            "required_approvals": policy.get("required_approvals", []),
+            "browser_profile_policy": policy.get("browser_profile_policy"),
+            "network_policy": policy.get("network_policy"),
+            "secret_env_keys": policy.get("secret_env_keys", []),
+        },
+    }
+
+
+def parse_plan_config(proposed_config: Any) -> dict[str, Any]:
+    if isinstance(proposed_config, dict):
+        return proposed_config
+    if isinstance(proposed_config, str):
+        try:
+            parsed = json.loads(proposed_config)
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            return {"raw": proposed_config}
+    return {"raw": str(proposed_config)}
+
+
+def leaks_secret_value(config: Any, env_keys: set[str]) -> bool:
+    if isinstance(config, dict):
+        for key, value in config.items():
+            key_text = str(key)
+            if key_text in env_keys and isinstance(value, str) and value and not is_placeholder(value):
+                return True
+            if re.search(r"(token|secret|password|api[_-]?key|private[_-]?key|credential)", key_text, re.I):
+                if isinstance(value, str) and value and not is_placeholder(value):
+                    return True
+            if leaks_secret_value(value, env_keys):
+                return True
+    if isinstance(config, list):
+        return any(leaks_secret_value(item, env_keys) for item in config)
+    return False
+
+
+def is_placeholder(value: str) -> bool:
+    return bool(re.fullmatch(r"(<[^>]+>|\$\{?[A-Z0-9_]+\}?|[A-Z][A-Z0-9_]{3,}|REDACTED|redacted|xxx+)", value.strip()))
+
+
 def policy_block(report: dict[str, Any], constraints: list[str]) -> dict[str, Any]:
     categories = set(report.get("category_counts", {}))
     rule_categories = set(report.get("rule_counts", {}))

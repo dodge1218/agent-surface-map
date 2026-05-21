@@ -7,7 +7,7 @@ Agent Surface Map is not a malware scanner and not a certification badge. It is 
 The core workflow is:
 
 ```text
-Paste MCP/tool repo -> read-only surface scan -> Gemma 4 install judgment -> copy constraints for the coding agent
+Paste MCP/tool repo -> read-only surface scan -> Gemma 4 install judgment -> validate final install plan -> copy constraints for the coding agent
 ```
 
 ## Non-Negotiables
@@ -18,6 +18,7 @@ Paste MCP/tool repo -> read-only surface scan -> Gemma 4 install judgment -> cop
 - Keep public rules generic and public-safe.
 - Do not expose private research workflow, target-specific classes, exploit chains, scoring internals, or bounty methodology.
 - Do not claim that a repo is safe or benign. Claim only an install posture: `add_carefully`, `sandbox_first`, or `do_not_add`.
+- A coding agent should validate the final proposed install plan before writing persistent MCP/client config.
 
 ## Gemma 4 Role
 

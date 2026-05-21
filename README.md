@@ -137,6 +137,8 @@ See `docs/mcp-usage.md` for client config and tool schemas. See `docs/security-n
 
 Use it when a coding agent is about to add a new MCP server, browser tool, skill, plugin, or repo instruction pack. The agent can call `scan_github_tool` or `scan_local_tool` first, then use the returned install context as constraints before touching local config.
 
+The MCP server also exposes `validate_install_plan(report, proposed_config)`, so the agent can check the final config before writing it.
+
 MCP workflow smoke test:
 
 ```bash

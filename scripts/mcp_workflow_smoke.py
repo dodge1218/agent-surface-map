@@ -47,6 +47,43 @@ def main() -> int:
     tool_names = [tool["name"] for tool in responses[1]["result"]["tools"]]
     payload = json.loads(responses[2]["result"]["content"][0]["text"])
     context = payload["install_context"]
+    validate_message = {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "method": "tools/call",
+        "params": {
+            "name": "validate_install_plan",
+            "arguments": {
+                "report": payload,
+                "proposed_config": {
+                    "global_install": True,
+                    "mcpServers": {
+                        "demo-browser": {
+                            "command": "node",
+                            "args": ["server.js", "--user-data-dir", "/home/me/.config/chrome"],
+                            "env": {"GITHUB_TOKEN": "plain-demo-token-value"},
+                        }
+                    },
+                },
+            },
+        },
+    }
+    process = subprocess.Popen(
+        [sys.executable, str(ROOT / "mcp_server.py")],
+        cwd=str(ROOT),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    stdout, stderr = process.communicate(
+        json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}) + "\n" + json.dumps(validate_message) + "\n",
+        timeout=20,
+    )
+    if process.returncode not in {0, None}:
+        raise RuntimeError(stderr.strip() or f"mcp server exited {process.returncode}")
+    validate_responses = [json.loads(line) for line in stdout.splitlines() if line.strip()]
+    plan_review = json.loads(validate_responses[1]["result"]["content"][0]["text"])
 
     proof = {
         "target_url": target_url,
@@ -56,6 +93,10 @@ def main() -> int:
         "review_source": payload.get("review_source"),
         "mcp_servers": [server["name"] for server in payload.get("mcp_servers", [])],
         "agent_context": context["agent_context"],
+        "install_plan_review": {
+            "decision": plan_review["decision"],
+            "blockers": plan_review["blockers"],
+        },
     }
     print(json.dumps(proof, indent=2))
     return 0

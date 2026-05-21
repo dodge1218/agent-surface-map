@@ -34,6 +34,7 @@ In under a minute, the user can paste a repo link and get:
 - Parse MCP configs.
 - Detect generic public rules for shell, browser, filesystem, credential, database, cloud, listener, prompt-instruction, and install-script surfaces.
 - Generate a machine-readable policy block for agents.
+- Validate a proposed final install plan against that policy before config is written.
 - Provide common MCP example reviews.
 
 ## Security Requirements
@@ -42,6 +43,7 @@ In under a minute, the user can paste a repo link and get:
 - GitHub zip extraction must reject traversal, absolute paths, symlinks, devices, too many files, and excessive decompressed size.
 - Hosted API must not return raw model prompts.
 - Local MCP scans default to the server working directory unless `ASM_ALLOWED_ROOTS` explicitly widens access.
+- Final install-plan validation must block broad local paths, embedded secret values, Docker socket exposure, and global installs that contradict `sandbox_first`.
 - Secret redaction must cover common env assignments, bearer tokens, GitHub tokens, OpenAI-style keys, npm tokens, JWTs, URL credentials, and private key headers.
 
 ## Non-Goals
