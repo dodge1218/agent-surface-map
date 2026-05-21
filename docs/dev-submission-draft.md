@@ -14,6 +14,12 @@ Paste repo. Scanner maps surface. Gemma decides posture. Agent installs safer.
 
 Agent Surface Map is a pre-install review for MCP servers and agent tools. Before a coding agent gets a new browser tool, filesystem mount, shell helper, Gmail/GitHub integration, or repo instruction pack, the app runs a read-only scan and asks: what posture should this install get?
 
+The actual loop is:
+
+```text
+scan repo -> Gemma decides install posture -> agent validates final config before writing it
+```
+
 Live demo:
 
 ```text
@@ -44,6 +50,8 @@ Then it redacts secret-looking values and sends the compact surface map to Gemma
 
 Gemma is the judgment layer. The deterministic scanner finds the evidence; Gemma turns it into a practical install decision and agent constraints.
 
+After that, the MCP workflow can check the final proposed config with `validate_install_plan`. That catches stuff like global install after `sandbox_first`, broad local paths, Docker socket exposure, and secret values pasted directly into config.
+
 ## Why this felt worth building
 
 Coding agents changed the shape of local risk. A repo is not just code anymore. It can ship instructions for your agent, MCP config, package scripts, browser access, write paths, and credential names.
@@ -68,7 +76,9 @@ There is also an MCP server in the repo:
 python3 mcp_server.py
 ```
 
-That means a coding agent can call `scan_github_tool(url)` before it edits local MCP config. That is the real workflow: "hey agent, before you install this new tool, ask Agent Surface Map what constraints to follow."
+That means a coding agent can call `scan_github_tool(url)` before it edits local MCP config, then call `validate_install_plan(report, proposed_config)` before it writes the final config.
+
+That is the real workflow: "hey agent, before you install this new tool, ask Agent Surface Map what constraints to follow, then check your final config against them."
 
 ## Safety choices
 
@@ -89,7 +99,7 @@ The hosted demo uses a guarded Gemma 4 path through OpenRouter. I also saved pro
 
 ```bash
 python3 -m unittest discover -s tests -v
-python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py
+python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py scripts/mcp_workflow_smoke.py
 node --check public/app.js
 python3 scripts/mcp_workflow_smoke.py
 ```
@@ -100,6 +110,7 @@ Current proof:
 - Gemma route configured
 - public demo MCP fixture works
 - MCP stdio workflow works
+- final install-plan validation blocks unsafe config
 - scanner tests pass
 
-I think the interesting part is not the regex scanner. It is the handoff. Deterministic code collects boring evidence, Gemma turns it into install constraints a developer or coding agent can actually use, and the install gets safer before anything touches the shell.
+I think the interesting part is not the regex scanner. It is the handoff. Deterministic code collects boring evidence, Gemma turns it into install constraints a developer or coding agent can actually use, and the final plan gets checked before anything touches the shell.

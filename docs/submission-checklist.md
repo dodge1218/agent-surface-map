@@ -7,6 +7,7 @@
 - [ ] Links live demo: `https://gemma-agent-surface-map.vercel.app`.
 - [ ] Links code: `https://github.com/dodge1218/agent-surface-map`.
 - [ ] Explains web flow and MCP flow.
+- [ ] Explains final install-plan validation.
 - [ ] Explains why Gemma 4 is central.
 - [ ] Mentions model choice: Gemma 4 31B Dense for final install review.
 - [ ] Explains `review_source` honestly for Gemma vs fallback.
@@ -22,12 +23,13 @@
 - [ ] Invalid URL returns a readable error.
 - [ ] Gemma verdict panel is visually obvious.
 - [ ] MCP workflow is visible on the page.
+- [ ] `validate_install_plan` is documented.
 - [ ] Example review cards load reports into the same verdict screen.
 
 ## Code
 
 - [ ] `python3 -m unittest discover -s tests -v`
-- [ ] `python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py`
+- [ ] `python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py scripts/mcp_workflow_smoke.py`
 - [ ] `node --check public/app.js`
 - [ ] `curl -X POST https://gemma-agent-surface-map.vercel.app/api/scan -H 'content-type: application/json' -d '{"url":"https://github.com/octocat/Hello-World"}'`
 - [ ] `python3 scripts/mcp_workflow_smoke.py`
