@@ -8,51 +8,35 @@ tags: devchallenge, gemmachallenge, gemma
 
 So the thing I built is pretty simple:
 
-```text
-Before your coding agent installs a new MCP, ask Gemma what it is about to trust.
-```
+**Before your coding agent installs a new MCP, ask Gemma what it is about to trust.**
 
 ## What I Built
 
 Agent Surface Map is a pre-install review for MCP servers and agent tools. It does not try to prove a repo is safe. It answers a more practical question:
 
-```text
 Should this be added carefully, sandboxed first, or not added?
-```
 
 There are already MCP scanners. That is good. I wanted the missing workflow layer: before a coding agent installs a new MCP, have Gemma turn the surface map into install constraints, then validate the final config before it gets written.
 
-The loop:
-
-```text
-scan repo -> Gemma decides install posture -> agent validates final config before writing it
-```
+The loop: scan repo -> Gemma decides install posture -> agent validates final config before writing it.
 
 ## Demo
 
-```text
-https://gemma-agent-surface-map.vercel.app
-```
+[Live demo](https://gemma-agent-surface-map.vercel.app)
 
 Click `Try demo MCP scan` on the homepage. It scans this tiny public fixture:
 
-```text
-https://github.com/dodge1218/agent-surface-demo-mcp
-```
+[Demo MCP fixture](https://github.com/dodge1218/agent-surface-demo-mcp)
 
 The live scan returns parsed MCP servers, a risk score, install constraints, and `review_source: "gemma"` when the Gemma route is available. If the provider rate-limits, the app falls back to the deterministic local review and labels that honestly. There is also a saved verified Gemma review so the model path is still visible when the provider is busy.
 
 ## Code
 
-```text
-https://github.com/dodge1218/agent-surface-map
-```
+[GitHub repo](https://github.com/dodge1218/agent-surface-map)
 
 There is also an MCP server in the repo:
 
-```bash
-python3 mcp_server.py
-```
+Run the MCP server with `python3 mcp_server.py`.
 
 That means a coding agent can call `scan_github_tool(url)` before it edits local MCP config, then call `validate_install_plan(report, proposed_config)` before it writes the final config.
 
@@ -109,12 +93,10 @@ The hosted demo uses a guarded Gemma 4 path through OpenRouter. I also saved pro
 
 ## Verification
 
-```bash
-python3 -m unittest discover -s tests -v
-python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py scripts/mcp_workflow_smoke.py
-node --check public/app.js
-python3 scripts/mcp_workflow_smoke.py
-```
+- `python3 -m unittest discover -s tests -v`
+- `python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py scripts/mcp_workflow_smoke.py`
+- `node --check public/app.js`
+- `python3 scripts/mcp_workflow_smoke.py`
 
 Current proof:
 
