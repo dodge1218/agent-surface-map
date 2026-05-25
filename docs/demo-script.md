@@ -11,7 +11,8 @@ Target length: 60 to 90 seconds.
 5. Point at browser profile and filesystem signals.
 6. Click `GitHub MCP` or `Postgres MCP`.
 7. Show how the same screen handles token/database risk.
-8. Click `Try demo MCP scan` to run the hosted scanner against the public demo fixture.
+8. Start with the default saved verified Gemma 4 review.
+9. Click `Try live demo scan` to run the hosted scanner against the public demo fixture.
 9. End with MCP workflow: coding agents can call `scan_github_tool(url)` before editing config.
 
 ## Voiceover
@@ -22,6 +23,6 @@ The scanner collects evidence locally and redacts secret-looking values. Gemma 4
 
 The web UI is for quick checks. The MCP server is for real workflow use: before a coding agent adds a new tool, it can ask this server for install constraints.
 
-The important part is the boundary. The scanner does not execute the target repo, does not send raw secrets, and clearly labels whether the review came from Gemma or the deterministic fallback.
+The important part is the boundary. The scanner does not execute the target repo, does not send raw secrets, and clearly labels whether the review came from Gemma or a deterministic fallback.
 
 The goal is simple: give developers a safety pause before they hand their coding agent a shell, browser, filesystem, mailbox, repo token, or database.

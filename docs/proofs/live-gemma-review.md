@@ -1,5 +1,12 @@
 # Live Gemma Review Proof
 
+This proof captures a successful hosted review where the API returned
+`review_source: "gemma"` for the public demo fixture.
+
+The public endpoint can still fall back when the upstream provider rate-limits
+Gemma. That fallback is expected product behavior and is labeled in the API
+response as `review_source: "fallback"` with the provider error attached.
+
 Command:
 
 ```bash

@@ -17,6 +17,7 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
+from policy import load_policy
 from surface_map import review_report, safe_install_context, scan, validate_install_plan
 
 
@@ -68,6 +69,7 @@ TOOLS = [
             "properties": {
                 "report": {"type": "object", "description": "Report object returned by scan_local_tool or scan_github_tool."},
                 "proposed_config": {"description": "The final MCP/client config or config fragment the agent wants to write."},
+                "team_policy": {"type": "object", "description": "Optional team policy with allowed/denied MCP server names, paths, browser profiles, approvals, risk thresholds, and severity thresholds."},
             },
             "required": ["report", "proposed_config"],
         },
@@ -193,8 +195,15 @@ def call_tool(name: str, arguments: dict) -> dict:
     if name == "generate_safe_install_context":
         return text_result(safe_install_context(arguments["report"]))
     if name == "validate_install_plan":
-        return text_result(validate_install_plan(arguments["report"], arguments["proposed_config"]))
+        return text_result(validate_install_plan(arguments["report"], arguments["proposed_config"], arguments.get("team_policy") or default_team_policy()))
     raise ValueError(f"unknown tool: {name}")
+
+
+def default_team_policy() -> dict:
+    policy_file = os.environ.get("ASM_POLICY_FILE")
+    if not policy_file:
+        return {}
+    return load_policy(Path(policy_file).expanduser().resolve())
 
 
 def handle(message: dict) -> dict | None:

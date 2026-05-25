@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-05-20T16:43:51Z",
-  "target": "/home/yin/security-research/openclaw-workspace/gemma-agent-surface-map/examples/mcp-catalog/memory-shell",
+  "target": "examples/mcp-catalog/memory-shell",
   "scanned_files": 2,
   "risk_score": 32,
   "category_counts": {
@@ -90,7 +90,7 @@
     "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
     "install_verdict": "sandbox_first",
     "confidence": "low",
-    "why_gemma_changed_the_call": "Gemma was not used; deterministic fallback kept the static install posture.",
+    "why_gemma_changed_the_call": "Deterministic fallback used the static install posture because the Gemma route was unavailable.",
     "agent_constraints": [
       "Do not execute repository code during review.",
       "Keep secret values out of prompts, reports, and logs.",

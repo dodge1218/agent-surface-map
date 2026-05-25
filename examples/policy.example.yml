@@ -1,0 +1,49 @@
+# Example Agent Surface Map drift policy.
+#
+# This file uses the dependency-free YAML subset supported by drift_watch.py:
+# scalar numbers/strings and top-level string lists.
+
+max_risk_score: 90
+max_risk_delta: 10
+
+block_severities:
+  - critical
+
+review_severities:
+  - high
+
+block_capabilities:
+  - container
+  - credentials
+
+review_capabilities:
+  - shell
+  - browser
+  - network
+  - filesystem
+  - install_script
+  - instruction
+
+allowed_mcp_server_names:
+  - filesystem
+  - browser
+
+denied_mcp_server_names:
+  - unsafe-shell
+
+allowed_paths:
+  - /tmp/review-work
+  - ./project
+
+denied_paths:
+  - /home
+  - /Users
+  - /etc
+  - /var/run/docker.sock
+
+allowed_browser_profiles:
+  - clean-agent-profile
+
+required_approvals:
+  - shell_command
+  - write_access

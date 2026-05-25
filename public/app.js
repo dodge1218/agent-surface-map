@@ -1,7 +1,8 @@
 async function loadReport() {
-  const response = await fetch("sample-report.json");
+  const response = await fetch("verified-gemma-review.json");
   const report = await response.json();
   render(report);
+  statusNode.textContent = "Loaded the saved verified Gemma 4 review for the public demo fixture.";
   await loadExamples();
 }
 
@@ -133,8 +134,8 @@ function render(report) {
 
   const review = report.gemma_review || {};
   const staticDecision = decisionFor(report.risk_score || 0);
-  document.getElementById("review-title").textContent = report.review_source === "gemma" ? "Gemma 4 install verdict" : "Fallback install review";
-  document.getElementById("core-review-label").textContent = report.review_source === "gemma" ? "Core Gemma review" : "Fallback review";
+  document.getElementById("review-title").textContent = reviewTitle(report);
+  document.getElementById("core-review-label").textContent = reviewLabel(report);
   document.getElementById("install-verdict").textContent = `Decision: ${decision.text}`;
   document.getElementById("install-reason").textContent = `Confidence: ${review.confidence || "low"} | Source: ${report.review_source || "fallback"}`;
   document.getElementById("gemma-delta").textContent = review.why_gemma_changed_the_call || `Static scan suggested ${staticDecision.text}; no Gemma judgment was available.`;
@@ -236,9 +237,29 @@ function reviewMode(report) {
     return "read-only scan + live/saved Gemma 4 review";
   }
   if (report.gemma_error) {
-    return "read-only scan + fallback review";
+    return "read-only scan + provider fallback";
   }
-  return "read-only scan + deterministic fallback review";
+  return "read-only scan + deterministic example template";
+}
+
+function reviewTitle(report) {
+  if (report.review_source === "gemma") {
+    return "Gemma 4 install verdict";
+  }
+  if (report.gemma_error) {
+    return "Provider fallback install review";
+  }
+  return "Deterministic example template";
+}
+
+function reviewLabel(report) {
+  if (report.review_source === "gemma") {
+    return "Core Gemma review";
+  }
+  if (report.gemma_error) {
+    return "Gemma unavailable, fallback shown";
+  }
+  return "Static template";
 }
 
 async function loadExamples() {
@@ -252,7 +273,7 @@ async function loadExamples() {
     card.innerHTML = `
       <div class="example-topline">
         <span>${escapeHtml(item.family)}</span>
-        <button type="button" data-report="${escapeHtml(item.report)}">Load review</button>
+        <button type="button" data-report="${escapeHtml(item.report)}">Load template</button>
       </div>
       <h3>${escapeHtml(item.name)}</h3>
       <p>${escapeHtml(item.why)}</p>
@@ -262,7 +283,7 @@ async function loadExamples() {
       </dl>
     `;
     card.querySelector("button").addEventListener("click", async () => {
-      statusNode.textContent = `Loaded example MCP review: ${item.name}`;
+      statusNode.textContent = `Loaded deterministic MCP template: ${item.name}. Use the verified Gemma review or live scan for the model path.`;
       const reportResponse = await fetch(item.report);
       render(await reportResponse.json());
       document.querySelector(".verdict-panel").scrollIntoView({ behavior: "smooth", block: "start" });

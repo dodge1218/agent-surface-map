@@ -84,7 +84,7 @@ PUBLIC_RULES = [
         "id": "broad_filesystem_access",
         "category": "broad_filesystem_access",
         "score": 7,
-        "pattern": re.compile(r"['\"](/home|/Users|/var/run|/etc|/|~/?|C:\\\\)", re.I),
+        "pattern": re.compile(r"(^|[\s:'\"\[-])(/home|/Users|/var/run|/etc)(/|:|\s|$)|['\"]/\s*['\"]|(^|[\s:'\"\[-])~/?(\s|$)|C:\\\\", re.I),
         "recommendation": "Do not grant home, root, or system paths to agent tools; mount only the project directory needed.",
     },
     {
@@ -201,11 +201,12 @@ def rule_severity(score: int) -> str:
 def extract_mcp_servers(root: Path) -> list[dict[str, Any]]:
     servers: list[dict[str, Any]] = []
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or path.name not in {"mcp.json", ".mcp.json"}:
+        if not path.is_file() or path.suffix.lower() != ".json":
             continue
-        if any(part in {".git", "node_modules", "vendor", "target", "__pycache__"} for part in path.parts):
+        rel_path = path.relative_to(root)
+        if any(part in {".git", "node_modules", "vendor", "target", "__pycache__"} for part in rel_path.parts):
             continue
-        rel = str(path.relative_to(root))
+        rel = str(rel_path)
         try:
             data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
         except (OSError, json.JSONDecodeError):
@@ -240,13 +241,295 @@ def mcp_risk_hints(command: str, args: list[Any], env_keys: list[str]) -> list[s
         hints.append("local process")
     if re.search(r"(browser|playwright|chrome|chromium|user-data-dir|cookies|storageState)", text, re.I):
         hints.append("browser/session")
-    if re.search(r"(/home|/Users|/var/run|/etc|~/?|C:\\\\)", text, re.I):
+    if re.search(r"(^|[\s:'\"\[-])(/home|/Users|/var/run|/etc)(/|:|\s|$)|(^|[\s:'\"\[-])~/?(\s|$)|C:\\\\", text, re.I):
         hints.append("broad filesystem path")
     if re.search(r"(TOKEN|SECRET|PASSWORD|KEY|CREDENTIAL|DATABASE_URL)", text, re.I):
         hints.append("credential reference")
     if re.search(r"(postgres|mysql|mongodb|redis|sqlite|database)", text, re.I):
         hints.append("database access")
     return hints
+
+
+def extract_structured_evidence(root: Path) -> list[dict[str, Any]]:
+    evidence: list[dict[str, Any]] = []
+    for path in sorted(root.rglob("*")):
+        if not path.is_file():
+            continue
+        rel_path = path.relative_to(root)
+        if any(part in {".git", "node_modules", "vendor", "target", "__pycache__"} for part in rel_path.parts):
+            continue
+        rel = str(rel_path)
+        if path.name in {"docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml"}:
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            evidence.extend(extract_compose_volumes(text, rel))
+        elif path.name == "devcontainer.json":
+            try:
+                data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if isinstance(data, dict):
+                evidence.extend(extract_devcontainer_evidence(data, rel))
+                evidence.extend(extract_mcp_settings_evidence(data, rel))
+        elif path.suffix.lower() == ".json":
+            try:
+                data = json.loads(path.read_text(encoding="utf-8", errors="replace"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if isinstance(data, dict):
+                evidence.extend(extract_mcp_settings_evidence(data, rel))
+    return evidence[:80]
+
+
+def extract_compose_volumes(text: str, rel_path: str) -> list[dict[str, Any]]:
+    volumes: list[dict[str, Any]] = []
+    in_volumes = False
+    volumes_indent = 0
+    current_long: dict[str, Any] | None = None
+
+    def flush_current() -> None:
+        nonlocal current_long
+        if not current_long:
+            return
+        source = current_long.get("source")
+        target = current_long.get("target")
+        if isinstance(source, str) and source and is_host_mount_source(source):
+            volumes.append(compose_volume_item(rel_path, int(current_long.get("line", 0) or 0), source, target if isinstance(target, str) else "", str(current_long.get("evidence", "")), "long"))
+        current_long = None
+
+    for idx, raw_line in enumerate(text.splitlines(), start=1):
+        stripped = raw_line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(raw_line) - len(raw_line.lstrip(" "))
+        if stripped == "volumes:":
+            flush_current()
+            in_volumes = True
+            volumes_indent = indent
+            continue
+        if in_volumes and indent <= volumes_indent and not stripped.startswith("- "):
+            flush_current()
+            in_volumes = False
+        if not in_volumes:
+            continue
+        if stripped.startswith("- "):
+            flush_current()
+            payload = stripped[2:].strip()
+            if payload.startswith("type:"):
+                current_long = {"line": idx, "evidence": raw_line.strip()}
+                continue
+            item = compose_volume_from_short(rel_path, idx, payload, raw_line.strip())
+            if item:
+                volumes.append(item)
+            continue
+        if current_long and ":" in stripped:
+            key, value = stripped.split(":", 1)
+            key = key.strip()
+            value = value.strip().strip("'\"")
+            if key in {"source", "src", "target", "dst", "destination"}:
+                if key in {"src"}:
+                    key = "source"
+                if key in {"dst", "destination"}:
+                    key = "target"
+                current_long[key] = value
+                current_long["evidence"] = (str(current_long.get("evidence", "")) + " " + stripped).strip()
+    flush_current()
+    return volumes
+
+
+def compose_volume_from_short(rel_path: str, line: int, payload: str, evidence: str) -> dict[str, Any] | None:
+    cleaned = payload.strip().strip("'\"")
+    if ":" not in cleaned:
+        return None
+    parts = cleaned.split(":")
+    if len(parts) < 2:
+        return None
+    source = parts[0].strip()
+    target = parts[1].strip()
+    mode = parts[2].strip() if len(parts) > 2 else ""
+    if not is_host_mount_source(source):
+        return None
+    item = compose_volume_item(rel_path, line, source, target, evidence, "short")
+    if mode:
+        item["mode"] = safe_excerpt(mode)
+    return item
+
+
+def compose_volume_item(rel_path: str, line: int, source: str, target: str, evidence: str, syntax: str) -> dict[str, Any]:
+    return {
+        "kind": "compose_volume",
+        "path": rel_path,
+        "line": line,
+        "source": safe_excerpt(source),
+        "target": safe_excerpt(target),
+        "syntax": syntax,
+        "evidence": safe_excerpt(evidence),
+        "risk_hints": compose_volume_risk_hints(source),
+        "recommendation": "Review host-side compose volume sources before granting an agent access.",
+    }
+
+
+def is_host_mount_source(source: str) -> bool:
+    return source.startswith(("/", "~", "./", "../")) or bool(re.match(r"^[A-Za-z]:\\\\", source))
+
+
+def compose_volume_risk_hints(source: str) -> list[str]:
+    hints: list[str] = []
+    if is_broad_local_path(source) or source == "/":
+        hints.append("broad host path")
+    if "docker.sock" in source:
+        hints.append("docker socket")
+    return hints
+
+
+def extract_devcontainer_evidence(data: dict[str, Any], rel_path: str) -> list[dict[str, Any]]:
+    evidence: list[dict[str, Any]] = []
+    mounts = data.get("mounts", [])
+    if isinstance(mounts, str):
+        mounts = [mounts]
+    if isinstance(mounts, list):
+        for idx, mount in enumerate(mounts, start=1):
+            if not isinstance(mount, str):
+                continue
+            parsed = parse_devcontainer_mount(mount)
+            if parsed:
+                evidence.append(devcontainer_mount_item(rel_path, idx, mount, parsed))
+    run_args = data.get("runArgs", [])
+    if isinstance(run_args, list):
+        for idx, value in enumerate(run_args):
+            if not isinstance(value, str):
+                continue
+            mount = ""
+            if value in {"-v", "--volume", "--mount"} and idx + 1 < len(run_args) and isinstance(run_args[idx + 1], str):
+                mount = run_args[idx + 1]
+            elif value.startswith(("-v=", "--volume=", "--mount=")):
+                mount = value.split("=", 1)[1]
+            elif value.startswith("-v") and len(value) > 2:
+                mount = value[2:]
+            if not mount:
+                continue
+            parsed = parse_devcontainer_mount(mount)
+            if parsed:
+                evidence.append(devcontainer_mount_item(rel_path, idx + 1, mount, parsed))
+    features = data.get("features", {})
+    if isinstance(features, dict):
+        for name in sorted(features):
+            evidence.append(
+                {
+                    "kind": "devcontainer_feature",
+                    "path": rel_path,
+                    "name": safe_excerpt(str(name)),
+                    "risk_hints": devcontainer_feature_risk_hints(str(name)),
+                    "recommendation": "Review devcontainer features because they can install tools and alter the runtime before agent use.",
+                }
+            )
+    for key in {"initializeCommand", "onCreateCommand", "postCreateCommand", "postStartCommand", "postAttachCommand"}:
+        value = data.get(key)
+        if isinstance(value, (str, list, dict)):
+            evidence.append(
+                {
+                    "kind": "devcontainer_lifecycle_command",
+                    "path": rel_path,
+                    "name": key,
+                    "evidence": safe_excerpt(json.dumps(value, sort_keys=True) if not isinstance(value, str) else value),
+                    "risk_hints": ["shell command"],
+                    "recommendation": "Review devcontainer lifecycle commands before allowing agent-driven setup.",
+                }
+            )
+    return evidence
+
+
+def parse_devcontainer_mount(mount: str) -> dict[str, str] | None:
+    text = mount.strip().strip("'\"")
+    if not text:
+        return None
+    if "," in text and "=" in text:
+        fields: dict[str, str] = {}
+        for part in text.split(","):
+            if "=" not in part:
+                continue
+            key, value = part.split("=", 1)
+            fields[key.strip()] = value.strip()
+        source = fields.get("source") or fields.get("src")
+        target = fields.get("target") or fields.get("dst") or fields.get("destination")
+        if source and is_host_mount_source(source):
+            return {"source": source, "target": target or "", "syntax": "mount"}
+        return None
+    item = compose_volume_from_short("", 0, text, text)
+    if not item:
+        return None
+    return {"source": str(item.get("source", "")), "target": str(item.get("target", "")), "syntax": "volume"}
+
+
+def devcontainer_mount_item(rel_path: str, index: int, mount: str, parsed: dict[str, str]) -> dict[str, Any]:
+    source = parsed.get("source", "")
+    return {
+        "kind": "devcontainer_mount",
+        "path": rel_path,
+        "index": index,
+        "source": safe_excerpt(source),
+        "target": safe_excerpt(parsed.get("target", "")),
+        "syntax": parsed.get("syntax", ""),
+        "evidence": safe_excerpt(mount),
+        "risk_hints": compose_volume_risk_hints(source),
+        "recommendation": "Review devcontainer host mounts before granting an agent access.",
+    }
+
+
+def devcontainer_feature_risk_hints(name: str) -> list[str]:
+    hints: list[str] = []
+    if re.search(r"(docker|kubectl|kubernetes|aws|gcloud|azure|ghcr|github)", name, re.I):
+        hints.append("privileged tooling")
+    return hints
+
+
+def extract_mcp_settings_evidence(data: dict[str, Any], rel_path: str) -> list[dict[str, Any]]:
+    raw_servers = data.get("mcpServers")
+    if not isinstance(raw_servers, dict):
+        return []
+    client = mcp_client_name(rel_path)
+    evidence: list[dict[str, Any]] = []
+    for name, config in sorted(raw_servers.items()):
+        if not isinstance(config, dict):
+            continue
+        args = config.get("args", [])
+        env = config.get("env", {})
+        env_keys = sorted(str(key) for key in env) if isinstance(env, dict) else []
+        command = str(config.get("command", ""))
+        safe_args = [safe_excerpt(str(arg)) for arg in args] if isinstance(args, list) else []
+        evidence.append(
+            {
+                "kind": "mcp_client_server",
+                "path": rel_path,
+                "client": client,
+                "name": safe_excerpt(str(name)),
+                "command": safe_excerpt(command),
+                "args": safe_args,
+                "env_keys": env_keys,
+                "risk_hints": mcp_risk_hints(command, args if isinstance(args, list) else [], env_keys),
+                "recommendation": "Review MCP client settings before enabling new agent tools.",
+            }
+        )
+    return evidence
+
+
+def mcp_client_name(rel_path: str) -> str:
+    lowered = rel_path.lower()
+    if ".cursor" in lowered:
+        return "cursor"
+    if ".windsurf" in lowered:
+        return "windsurf"
+    if "claude" in lowered:
+        return "claude"
+    if "continue" in lowered:
+        return "continue"
+    if "devcontainer" in lowered:
+        return "devcontainer"
+    if rel_path.endswith(("mcp.json", ".mcp.json")):
+        return "mcp"
+    return "unknown"
 
 
 def scan(root: Path) -> dict[str, Any]:
@@ -257,9 +540,12 @@ def scan(root: Path) -> dict[str, Any]:
     rule_counts: dict[str, int] = {}
 
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or not should_scan(path):
+        if not path.is_file():
             continue
-        rel = str(path.relative_to(root))
+        rel_path = path.relative_to(root)
+        if not should_scan(rel_path):
+            continue
+        rel = str(rel_path)
         try:
             text = path.read_text(encoding="utf-8", errors="replace")
         except OSError:
@@ -304,6 +590,7 @@ def scan(root: Path) -> dict[str, Any]:
         "category_counts": categories,
         "rule_counts": rule_counts,
         "mcp_servers": extract_mcp_servers(root),
+        "structured_evidence": extract_structured_evidence(root),
         "findings": [asdict(f) for f in findings[:80]],
         "rules": rules[:80],
         "gemma_review": None,
@@ -328,6 +615,7 @@ def build_gemma_prompt(report: dict[str, Any]) -> str:
         "findings": report["findings"][:30],
         "rules": report.get("rules", [])[:30],
         "mcp_servers": report.get("mcp_servers", [])[:20],
+        "structured_evidence": report.get("structured_evidence", [])[:20],
     }
     return (
         "You are Gemma 4 acting as a pragmatic local agent-security reviewer. "
@@ -403,7 +691,7 @@ def normalize_review(review: dict[str, Any], report: dict[str, Any], source: str
         "confidence": confidence,
         "why_gemma_changed_the_call": str(
             review.get("why_gemma_changed_the_call")
-            or ("Gemma was not used; deterministic fallback kept the static install posture." if source == "fallback" else "Gemma kept the static posture and clarified the install constraints.")
+            or ("Deterministic fallback used the static install posture because the Gemma route was unavailable." if source == "fallback" else "Gemma kept the static posture and clarified the install constraints.")
         ),
         "agent_constraints": [str(item) for item in constraints[:12]],
         "top_risks": [str(item) for item in review.get("top_risks", [])[:8]] if isinstance(review.get("top_risks", []), list) else [],
@@ -430,7 +718,7 @@ def fallback_review(report: dict[str, Any]) -> dict[str, Any]:
         "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
         "install_verdict": decision["verdict"],
         "confidence": "low",
-        "why_gemma_changed_the_call": "Gemma was not used; deterministic fallback kept the static install posture.",
+        "why_gemma_changed_the_call": "Deterministic fallback used the static install posture because the Gemma route was unavailable.",
         "agent_constraints": agent_context(report),
         "top_risks": [f"{name.replace('_', ' ')} appeared {count} time(s)." for name, count in top],
         "quick_wins": [
@@ -536,11 +824,12 @@ def safe_install_context(report: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_install_plan(report: dict[str, Any], proposed_config: Any) -> dict[str, Any]:
+def validate_install_plan(report: dict[str, Any], proposed_config: Any, team_policy: dict[str, Any] | None = None) -> dict[str, Any]:
     """Check a final proposed MCP/client config against the scan-derived policy."""
     config = parse_plan_config(proposed_config)
     context = safe_install_context(report)
     policy = context["policy"]
+    team_policy = team_policy if isinstance(team_policy, dict) else {}
     blockers: list[str] = []
     warnings: list[str] = []
     required_changes: list[str] = []
@@ -551,7 +840,8 @@ def validate_install_plan(report: dict[str, Any], proposed_config: Any) -> dict[
         blockers.append("Plan requests global install while scan posture is sandbox_first.")
 
     text = json.dumps(config, sort_keys=True)
-    if re.search(r"(/home|/Users|/etc|/var/run|~/?|C:\\\\)", text, re.I):
+    plan_paths = policy_path_values(config)
+    if any(is_broad_local_path(path) for path in plan_paths):
         blockers.append("Plan includes broad local paths; mount only the project directory.")
     if re.search(r"(docker\.sock|/var/run/docker\.sock)", text, re.I):
         blockers.append("Plan exposes Docker socket access.")
@@ -562,10 +852,50 @@ def validate_install_plan(report: dict[str, Any], proposed_config: Any) -> dict[
     if leaks_secret_value(config, set(policy.get("secret_env_keys", []))):
         blockers.append("Plan appears to include a secret value; use env key names or placeholders only.")
 
+    planned_servers = planned_mcp_server_names(config)
+    denied_servers = policy_string_set(team_policy.get("denied_mcp_server_names", []))
+    allowed_servers = policy_string_set(team_policy.get("allowed_mcp_server_names", []))
+    if planned_servers & denied_servers:
+        blockers.append("Plan includes policy-denied MCP server: " + ", ".join(sorted(planned_servers & denied_servers)) + ".")
+    if allowed_servers and planned_servers - allowed_servers:
+        blockers.append("Plan includes MCP server outside policy allowlist: " + ", ".join(sorted(planned_servers - allowed_servers)) + ".")
+    max_risk_score = policy_int(team_policy.get("max_risk_score"))
+    if max_risk_score is not None and int(report.get("risk_score", 0)) > max_risk_score:
+        blockers.append(f"Scan risk score {report.get('risk_score', 0)} exceeds policy max_risk_score {max_risk_score}.")
+    report_severities = {
+        str(item.get("severity", "")).lower()
+        for item in list(report.get("findings", [])) + list(report.get("rules", []))
+        if isinstance(item, dict) and item.get("severity")
+    }
+    block_severities = policy_string_set(team_policy.get("block_severities", []))
+    review_severities = policy_string_set(team_policy.get("review_severities", []))
+    if report_severities & block_severities:
+        blockers.append("Scan includes team-policy blocked severity: " + ", ".join(sorted(report_severities & block_severities)) + ".")
+    if report_severities & review_severities:
+        warnings.append("Scan includes team-policy review severity: " + ", ".join(sorted(report_severities & review_severities)) + ".")
+
+    denied_paths = policy_string_set(team_policy.get("denied_paths", [])) | policy_string_set(team_policy.get("blocked_paths", []))
+    allowed_paths = policy_string_set(team_policy.get("allowed_paths", []))
+    for path in sorted(plan_paths):
+        denied_match = matching_path_policy(path, denied_paths)
+        if denied_match:
+            blockers.append(f"Plan includes policy-denied path {path}: matched {denied_match}.")
+        elif allowed_paths and not matching_path_policy(path, allowed_paths):
+            blockers.append(f"Plan includes path outside policy allowed_paths: {path}.")
+
+    allowed_browser_profiles = policy_string_set(team_policy.get("allowed_browser_profiles", []))
+    browser_profiles = planned_browser_profiles(config)
+    for profile in sorted(browser_profiles):
+        if allowed_browser_profiles and profile not in allowed_browser_profiles:
+            blockers.append(f"Plan uses browser profile outside policy allowlist: {profile}.")
+
     declared_approvals = {str(item) for item in config.get("required_approvals", [])} if isinstance(config.get("required_approvals"), list) else set()
     for approval in policy.get("required_approvals", []):
         if approval not in declared_approvals:
             warnings.append(f"Plan does not declare required approval: {approval}.")
+    for approval in policy_string_set(team_policy.get("required_approvals", [])):
+        if approval not in declared_approvals:
+            warnings.append(f"Plan does not declare team-policy required approval: {approval}.")
 
     decision = "pass"
     if blockers:
@@ -586,6 +916,17 @@ def validate_install_plan(report: dict[str, Any], proposed_config: Any) -> dict[
             "browser_profile_policy": policy.get("browser_profile_policy"),
             "network_policy": policy.get("network_policy"),
             "secret_env_keys": policy.get("secret_env_keys", []),
+            "team_policy": {
+                "allowed_mcp_server_names": sorted(allowed_servers),
+                "denied_mcp_server_names": sorted(denied_servers),
+                "max_risk_score": max_risk_score,
+                "allowed_paths": sorted(allowed_paths),
+                "denied_paths": sorted(denied_paths),
+                "allowed_browser_profiles": sorted(allowed_browser_profiles),
+                "required_approvals": sorted(policy_string_set(team_policy.get("required_approvals", []))),
+                "block_severities": sorted(block_severities),
+                "review_severities": sorted(review_severities),
+            },
         },
     }
 
@@ -601,6 +942,136 @@ def parse_plan_config(proposed_config: Any) -> dict[str, Any]:
         except json.JSONDecodeError:
             return {"raw": proposed_config}
     return {"raw": str(proposed_config)}
+
+
+def planned_mcp_server_names(config: dict[str, Any]) -> set[str]:
+    raw_servers = config.get("mcpServers")
+    if not isinstance(raw_servers, dict):
+        return set()
+    return {str(name) for name, value in raw_servers.items() if isinstance(value, dict)}
+
+
+def local_path_values(config: Any) -> set[str]:
+    values: set[str] = set()
+    if isinstance(config, dict):
+        for value in config.values():
+            values |= local_path_values(value)
+        return values
+    if isinstance(config, list):
+        for value in config:
+            values |= local_path_values(value)
+        return values
+    if not isinstance(config, str):
+        return values
+    for candidate in re.findall(r"(?:~|/[A-Za-z0-9._~+@%=-][^\s\"',}\]]*|[A-Za-z]:\\\\[^\s\"',}\]]+)", config):
+        if candidate.startswith(("http://", "https://")):
+            continue
+        cleaned = candidate.rstrip(":")
+        if cleaned.startswith("/") and ":" in cleaned:
+            cleaned = cleaned.split(":", 1)[0]
+        values.add(cleaned)
+    return values
+
+
+def policy_path_values(config: Any) -> set[str]:
+    values: set[str] = set()
+    if isinstance(config, dict):
+        for key, value in config.items():
+            key_text = str(key).lower()
+            if key_text in {"dockerfile", "docker_file"} and isinstance(value, str):
+                values |= docker_mount_host_paths(value)
+            else:
+                values |= policy_path_values(value)
+        return values
+    if isinstance(config, list):
+        for value in config:
+            values |= policy_path_values(value)
+        return values
+    if not isinstance(config, str):
+        return values
+    mount_paths = docker_mount_host_paths(config)
+    if mount_paths:
+        return mount_paths
+    if looks_like_dockerfile_text(config):
+        return set()
+    return local_path_values(config)
+
+
+def docker_mount_host_paths(text: str) -> set[str]:
+    paths: set[str] = set()
+    for raw in text.split():
+        candidate = raw.strip().strip(" [],'\"")
+        if not candidate or ":" not in candidate:
+            continue
+        host, _container = candidate.split(":", 1)
+        host = host.strip().strip("'\"")
+        if host.startswith(("/", "~", "./", "../")) or (len(host) > 2 and host[1:3] == ":\\"):
+            paths.add(host)
+    return paths
+
+
+def looks_like_dockerfile_text(text: str) -> bool:
+    stripped = text.strip()
+    return bool(re.search(r"(?im)^\s*(FROM|RUN|COPY|ADD|WORKDIR|USER|ENV|CMD|ENTRYPOINT|EXPOSE)\b", stripped))
+
+
+def matching_path_policy(path: str, policies: set[str]) -> str | None:
+    normalized = path.rstrip("/")
+    for policy in sorted(policies):
+        candidate = policy.rstrip("/")
+        if not candidate:
+            continue
+        if normalized == candidate or normalized.startswith(candidate + "/"):
+            return policy
+    return None
+
+
+def is_broad_local_path(path: str) -> bool:
+    return bool(re.search(r"^(~|/home(?:/|$)|/Users(?:/|$)|/etc(?:/|$)|/var/run(?:/|$)|[A-Za-z]:\\\\)", path))
+
+
+def planned_browser_profiles(config: Any) -> set[str]:
+    profiles: set[str] = set()
+    if isinstance(config, str):
+        for match in re.findall(r"--user-data-dir(?:=|\s+)([^\s\"',}\]]+)", config):
+            profiles.add(match)
+        for match in re.findall(r"BROWSER_PROFILE[\"']?\s*[:=]\s*[\"']?([^\"'\s,}]+)", config):
+            profiles.add(match)
+        return profiles
+    if isinstance(config, dict):
+        for key, value in config.items():
+            key_text = str(key)
+            if key_text == "BROWSER_PROFILE" and isinstance(value, str):
+                profiles.add(value)
+            if key_text in {"browser_profile", "browserProfile", "user_data_dir", "userDataDir"} and isinstance(value, str):
+                profiles.add(value)
+            profiles |= planned_browser_profiles(value)
+        return profiles
+    if isinstance(config, list):
+        for index, value in enumerate(config):
+            if value == "--user-data-dir" and index + 1 < len(config) and isinstance(config[index + 1], str):
+                profiles.add(config[index + 1])
+            elif isinstance(value, str) and value.startswith("--user-data-dir="):
+                profiles.add(value.split("=", 1)[1])
+            profiles |= planned_browser_profiles(value)
+    return profiles
+
+
+def policy_string_set(value: Any) -> set[str]:
+    if isinstance(value, str):
+        return {value}
+    if isinstance(value, list):
+        return {str(item) for item in value if str(item)}
+    return set()
+
+
+def policy_int(value: Any) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def leaks_secret_value(config: Any, env_keys: set[str]) -> bool:

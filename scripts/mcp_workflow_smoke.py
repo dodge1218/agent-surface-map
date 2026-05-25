@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_URL = "https://github.com/dodge1218/agent-surface-demo-mcp"
+LOCAL_FIXTURE = ROOT / "examples/demo-agent-stack"
 
 
 def main() -> int:
@@ -45,6 +46,28 @@ def main() -> int:
 
     responses = [json.loads(line) for line in stdout.splitlines() if line.strip()]
     tool_names = [tool["name"] for tool in responses[1]["result"]["tools"]]
+    scan_mode = "github"
+    if "result" not in responses[2]:
+        scan_mode = "local"
+        messages[2]["params"] = {
+            "name": "scan_local_tool",
+            "arguments": {"path": str(LOCAL_FIXTURE)},
+        }
+        process = subprocess.Popen(
+            [sys.executable, str(ROOT / "mcp_server.py")],
+            cwd=str(ROOT),
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        stdout, stderr = process.communicate(
+            "".join(json.dumps(message) + "\n" for message in messages),
+            timeout=20,
+        )
+        if process.returncode not in {0, None}:
+            raise RuntimeError(stderr.strip() or f"mcp server exited {process.returncode}")
+        responses = [json.loads(line) for line in stdout.splitlines() if line.strip()]
     payload = json.loads(responses[2]["result"]["content"][0]["text"])
     context = payload["install_context"]
     validate_message = {
@@ -87,6 +110,7 @@ def main() -> int:
 
     proof = {
         "target_url": target_url,
+        "scan_mode": scan_mode,
         "tools": tool_names,
         "verdict": context["verdict"],
         "risk_score": context["risk_score"],

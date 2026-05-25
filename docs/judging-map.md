@@ -51,6 +51,6 @@ The UI keeps the workflow direct:
 - load common MCP example reviews
 - use the MCP server inside a coding agent for real workflow integration
 
-## DNP Boundary
+## Publication Boundary
 
 The public app includes generic MCP/agent safety rules only. It does not publish private target lists, bounty workflow details, exploit chains, internal scoring, or private bug classes.

@@ -5,8 +5,10 @@ Keep changes small, public-safe, and easy to verify.
 Before opening a PR, run:
 
 ```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
 python3 -m unittest discover -s tests -v
-python3 -m py_compile surface_map.py server.py api/scan.py mcp_server.py scripts/mcp_workflow_smoke.py
+python3 -m py_compile remediation_pr_body.py remediation_apply.py remediation_approval.py remediation_renderer.py drift_watch.py runtime_telemetry.py policy.py surface_map.py server.py api/scan.py mcp_server.py scripts/mcp_workflow_smoke.py
 node --check public/app.js
 ```
 

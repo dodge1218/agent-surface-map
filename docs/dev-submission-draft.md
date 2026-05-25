@@ -6,13 +6,13 @@ tags: devchallenge, gemmachallenge, gemma
 
 *This is a submission for the [Gemma 4 Challenge: Build with Gemma 4](https://dev.to/challenges/google-gemma-2026-05-06).*
 
-So the thing I built is pretty simple:
+The thing I built is pretty simple:
 
 **Before your coding agent installs a new MCP, ask Gemma what it is about to trust.**
 
 ## What I Built
 
-Agent Surface Map is a pre-install review for MCP servers and agent tools. It does not try to prove a repo is safe. It answers a more practical question:
+Agent Surface Map is a pre-install review for MCP servers and agent tools. It does not try to prove a repo is safe. That would be fake precision. It answers a more practical question:
 
 Should this be added carefully, sandboxed first, or not added?
 
@@ -24,11 +24,15 @@ The loop: scan repo -> Gemma decides install posture -> agent validates final co
 
 [Live demo](https://gemma-agent-surface-map.vercel.app)
 
-Click `Try demo MCP scan` on the homepage. It scans this tiny public fixture:
+The page opens on a saved verified Gemma 4 review for this tiny public fixture:
 
 [Demo MCP fixture](https://github.com/dodge1218/agent-surface-demo-mcp)
 
-The live scan returns parsed MCP servers, a risk score, install constraints, and `review_source: "gemma"` when the Gemma route is available. If the provider rate-limits, the app falls back to the deterministic local review and labels that honestly. There is also a saved verified Gemma review so the model path is still visible when the provider is busy.
+Click `Load verified Gemma 4 review` to see the saved model path. Click `Try live demo scan` to run the hosted scanner against the same fixture.
+
+The live scan returns parsed MCP servers, a risk score, install constraints, and `review_source: "gemma"` when the Gemma route is available. If the provider rate-limits, the app falls back to the deterministic local review and labels that honestly. That fallback behavior is part of the product, not something hidden from the judge.
+
+The point is that the judge-facing path does not depend on provider luck: the verified Gemma 4 review is loaded by default and saved in the repo.
 
 ## Code
 
@@ -64,7 +68,7 @@ Gemma is the judgment layer. The deterministic scanner finds the evidence; Gemma
 
 I chose the 31B Dense model because this is not just classification. The model has to reason over messy developer context: browser profile reuse plus filesystem mounts plus token names is more serious than any one signal alone.
 
-After Gemma returns the posture, the MCP workflow can check the final proposed config with `validate_install_plan`. That catches stuff like global install after `sandbox_first`, broad local paths, Docker socket exposure, and secret values pasted directly into config.
+After Gemma returns the posture, the MCP workflow can check the final proposed config with `validate_install_plan`. That catches global install after `sandbox_first`, broad local paths, Docker socket exposure, and secret values pasted directly into config.
 
 ## Why this felt worth building
 
@@ -80,14 +84,14 @@ And yeah, you can paste a config into ChatGPT and ask for advice. The difference
 
 I kept the evaluator boring on purpose:
 
-- no repo code execution
-- shallow/no-submodule GitHub retrieval
-- secret value redaction
-- local path refusal for root/profile/credential dirs
-- bounded MCP responses
-- public scan rate limits
+- No repo code execution
+- Shallow/no-submodule GitHub retrieval
+- Secret value redaction
+- Local path refusal for root/profile/credential dirs
+- Bounded MCP responses
+- Public scan rate limits
 - Gemma review rate limits
-- best-effort demo throttles for scans and Gemma reviews
+- Best-effort demo throttles for scans and Gemma reviews
 
 The hosted demo uses a guarded Gemma 4 path through OpenRouter. I also saved proof artifacts for the MCP workflow and live Gemma review in `docs/proofs/`.
 
@@ -101,7 +105,8 @@ The hosted demo uses a guarded Gemma 4 path through OpenRouter. I also saved pro
 Current proof:
 
 - live demo deployed
-- Gemma route configured
+- Gemma route configured, with honest fallback when the provider returns 429
+- saved verified Gemma review artifact included in the repo
 - public demo MCP fixture works
 - MCP stdio workflow works
 - final install-plan validation blocks unsafe config
