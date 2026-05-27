@@ -9,12 +9,14 @@ import os
 import re
 import sys
 import time
-import urllib.error
-import urllib.request
 from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Any
 
+import reviewers
+
+
+REPORT_VERSION = "agent-surface-map.report.v1"
 
 AGENT_FILES = {
     "AGENTS.md",
@@ -583,6 +585,7 @@ def scan(root: Path) -> dict[str, Any]:
 
     risk_score = min(100, sum(RISK_WEIGHTS[f.category] for f in findings) + sum(rule["score"] for rule in rules))
     report = {
+        "report_version": REPORT_VERSION,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "target": str(root),
         "scanned_files": scanned_files,
@@ -594,6 +597,7 @@ def scan(root: Path) -> dict[str, Any]:
         "findings": [asdict(f) for f in findings[:80]],
         "rules": rules[:80],
         "gemma_review": None,
+        "reviewer": reviewer_metadata("none"),
     }
     profile_path = root / "agent-surface-profile.json"
     if profile_path.exists():
@@ -605,137 +609,36 @@ def scan(root: Path) -> dict[str, Any]:
 
 
 def build_gemma_prompt(report: dict[str, Any]) -> str:
-    static_decision = install_decision(int(report.get("risk_score", 0)))
-    compact = {
-        "scanned_files": report["scanned_files"],
-        "risk_score": report["risk_score"],
-        "static_install_decision": static_decision,
-        "category_counts": report["category_counts"],
-        "rule_counts": report.get("rule_counts", {}),
-        "findings": report["findings"][:30],
-        "rules": report.get("rules", [])[:30],
-        "mcp_servers": report.get("mcp_servers", [])[:20],
-        "structured_evidence": report.get("structured_evidence", [])[:20],
-    }
-    return (
-        "You are Gemma 4 acting as a pragmatic local agent-security reviewer. "
-        "Analyze this redacted agent-surface inventory and make the install-policy judgment. "
-        "The static scanner is evidence collection, not the final product. Return valid JSON with keys: "
-        "summary, install_verdict, confidence, why_gemma_changed_the_call, agent_constraints, "
-        "top_risks, quick_wins, hardening_plan. install_verdict must be one of "
-        "add_carefully, sandbox_first, do_not_add. confidence must be low, medium, or high. "
-        "Be specific, connect combined risks, and do not invent files.\n\n"
-        + json.dumps(compact, indent=2)
-    )
+    return reviewers.build_model_prompt(report, reviewer_name="Gemma 4")
 
 
 def call_gemma(prompt: str) -> dict[str, Any]:
-    api_key = os.environ.get("GEMMA_API_KEY")
-    base_url = os.environ.get("GEMMA_BASE_URL")
-    model = os.environ.get("GEMMA_MODEL", "google/gemma-4-31b")
-    if not api_key or not base_url:
-        raise RuntimeError("GEMMA_API_KEY and GEMMA_BASE_URL are required for --gemma")
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": "Return valid JSON only."},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.2,
-    }
-    req = urllib.request.Request(
-        base_url.rstrip("/") + "/chat/completions",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": os.environ.get("GEMMA_HTTP_REFERER", "https://gemma-agent-surface-map.vercel.app"),
-            "X-Title": os.environ.get("GEMMA_APP_TITLE", "Agent Surface Map"),
-        },
-        method="POST",
-    )
-    with urllib.request.urlopen(req, timeout=60) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
-    content = data["choices"][0]["message"]["content"]
-    return parse_gemma_content(content)
+    return reviewers.call_gemma(prompt)
 
 
 def parse_gemma_content(content: str) -> dict[str, Any]:
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        fenced = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", content, re.S)
-        if fenced:
-            try:
-                return json.loads(fenced.group(1))
-            except json.JSONDecodeError:
-                pass
-        return {"summary": content, "top_risks": [], "quick_wins": [], "hardening_plan": []}
+    return reviewers.parse_model_content(content)
 
 
 def normalize_review(review: dict[str, Any], report: dict[str, Any], source: str) -> dict[str, Any]:
-    static = install_decision(int(report.get("risk_score", 0)))
-    verdict = str(review.get("install_verdict") or static["verdict"])
-    if verdict not in {"add_carefully", "sandbox_first", "do_not_add"}:
-        verdict = static["verdict"]
-    confidence = str(review.get("confidence") or ("medium" if source == "gemma" else "low"))
-    if confidence not in {"low", "medium", "high"}:
-        confidence = "medium" if source == "gemma" else "low"
-    constraints = review.get("agent_constraints")
-    if not isinstance(constraints, list) or not constraints:
-        constraints = agent_context(report)
-    normalized = {
-        "summary": str(review.get("summary") or "Install posture review completed."),
-        "install_verdict": verdict,
-        "confidence": confidence,
-        "why_gemma_changed_the_call": str(
-            review.get("why_gemma_changed_the_call")
-            or ("Deterministic fallback used the static install posture because the Gemma route was unavailable." if source == "fallback" else "Gemma kept the static posture and clarified the install constraints.")
-        ),
-        "agent_constraints": [str(item) for item in constraints[:12]],
-        "top_risks": [str(item) for item in review.get("top_risks", [])[:8]] if isinstance(review.get("top_risks", []), list) else [],
-        "quick_wins": [str(item) for item in review.get("quick_wins", [])[:8]] if isinstance(review.get("quick_wins", []), list) else [],
-        "hardening_plan": [str(item) for item in review.get("hardening_plan", [])[:8]] if isinstance(review.get("hardening_plan", []), list) else [],
-    }
-    if not normalized["hardening_plan"]:
-        normalized["hardening_plan"] = normalized["quick_wins"]
-    return normalized
+    return reviewers.normalize_review(review, report, source, install_decision_fn=install_decision, agent_context_fn=agent_context)
+
+
+def reviewer_metadata(source: str, *, error: str | None = None) -> dict[str, Any]:
+    return reviewers.reviewer_metadata(source, error=error)
 
 
 def gemma_configured() -> bool:
-    return bool(os.environ.get("GEMMA_API_KEY") and os.environ.get("GEMMA_BASE_URL"))
+    return reviewers.gemma_configured()
 
 
 def fallback_review(report: dict[str, Any]) -> dict[str, Any]:
-    counts = report["category_counts"]
-    combined = {**counts}
-    for name, count in report.get("rule_counts", {}).items():
-        combined[name] = combined.get(name, 0) + count
-    top = sorted(combined.items(), key=lambda item: item[1], reverse=True)[:3]
-    decision = install_decision(int(report.get("risk_score", 0)))
-    return {
-        "summary": "This local scan found agent-operating-surface signals that deserve review before broad agent automation.",
-        "install_verdict": decision["verdict"],
-        "confidence": "low",
-        "why_gemma_changed_the_call": "Deterministic fallback used the static install posture because the Gemma route was unavailable.",
-        "agent_constraints": agent_context(report),
-        "top_risks": [f"{name.replace('_', ' ')} appeared {count} time(s)." for name, count in top],
-        "quick_wins": [
-            "Run read-only before granting write access.",
-            "Document which MCP servers and browser profiles are allowed.",
-            "Keep secret values out of model context and reports.",
-        ],
-        "hardening_plan": [
-            "Inventory agent config and instruction files.",
-            "Narrow shell, browser, network, and write permissions.",
-            "Re-run the scan and compare the risk score before shipping.",
-        ],
-    }
+    return reviewers.deterministic_review(report, install_decision_fn=install_decision, agent_context_fn=agent_context)
 
 
 def review_report(report: dict[str, Any], *, allow_gemma: bool | None = None) -> dict[str, Any]:
     """Attach a Gemma review when configured, otherwise attach deterministic fallback."""
+    report.setdefault("report_version", REPORT_VERSION)
     if allow_gemma is None:
         allow_gemma = gemma_configured()
     if allow_gemma:
@@ -743,13 +646,15 @@ def review_report(report: dict[str, Any], *, allow_gemma: bool | None = None) ->
         try:
             report["gemma_review"] = normalize_review(call_gemma(prompt), report, "gemma")
             report["review_source"] = "gemma"
+            report["reviewer"] = reviewer_metadata("gemma")
             report.pop("gemma_error", None)
             return report
-        except (RuntimeError, urllib.error.URLError, TimeoutError, json.JSONDecodeError, KeyError) as exc:
+        except (RuntimeError, OSError, TimeoutError, json.JSONDecodeError, KeyError) as exc:
             report["gemma_error"] = str(exc)
 
     report["gemma_review"] = normalize_review(fallback_review(report), report, "fallback")
     report["review_source"] = "fallback"
+    report["reviewer"] = reviewer_metadata("fallback", error=report.get("gemma_error"))
     return report
 
 
@@ -810,9 +715,11 @@ def safe_install_context(report: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(constraints, list) or not constraints:
         constraints = agent_context(report)
     return {
+        "report_version": report.get("report_version", REPORT_VERSION),
         **decision,
         "static_verdict": static_decision["verdict"],
         "review_source": report.get("review_source", "fallback"),
+        "reviewer": report.get("reviewer", reviewer_metadata(report.get("review_source", "fallback"))),
         "confidence": review.get("confidence", "low") if isinstance(review, dict) else "low",
         "risk_score": report.get("risk_score", 0),
         "risk_signals": report.get("category_counts", {}),
@@ -1105,12 +1012,16 @@ def policy_block(report: dict[str, Any], constraints: list[str]) -> dict[str, An
     return {
         "allowed_paths": ["project directory only"],
         "denied_paths": ["home directory", "filesystem root", "credential/profile directories"],
-        "secret_env_keys": sorted({key for server in report.get("mcp_servers", []) for key in server.get("env_keys", [])}),
+        "secret_env_keys": sorted({key for server in report.get("mcp_servers", []) for key in server.get("env_keys", []) if is_secret_key(key)}),
         "browser_profile_policy": "clean profile only" if "browser_access" in categories or "browser_session_surface" in rule_categories else "not detected",
         "network_policy": "allowlist outbound hosts" if "network_access" in categories else "not detected",
         "required_approvals": requires_approval,
         "constraints": constraints[:12],
     }
+
+
+def is_secret_key(value: str) -> bool:
+    return bool(re.search(r"(token|secret|password|api[_-]?key|access[_-]?key|private[_-]?key|credential)", str(value), re.I))
 
 
 def main() -> int:

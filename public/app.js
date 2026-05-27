@@ -3,39 +3,47 @@ async function loadReport() {
   const report = await response.json();
   render(report);
   statusNode.textContent = "Loaded the saved verified Gemma 4 review for the public demo fixture.";
+  updateActionLabel();
   await loadExamples();
 }
 
 const form = document.getElementById("scan-form");
 const input = document.getElementById("scan-url");
+const submitButton = document.getElementById("scan-submit");
 const statusNode = document.getElementById("scan-status");
-const demoScan = document.getElementById("demo-scan");
+const errorNode = document.getElementById("scan-error");
+const loader = document.getElementById("scan-loader");
 const verifiedDemo = document.getElementById("verified-demo");
 const copyContext = document.getElementById("copy-context");
 const DEMO_SCAN_URL = "https://github.com/dodge1218/agent-surface-demo-mcp";
 let currentInstallContext = "";
+let loadingTimer = 0;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const url = input.value.trim();
-  if (!url) {
-    statusNode.textContent = "Paste a GitHub or MCP repository URL first.";
+  clearMessage();
+  const rawUrl = input.value.trim();
+  const url = rawUrl || DEMO_SCAN_URL;
+  const validation = validateRepoUrl(url);
+  if (!validation.ok) {
+    showInlineError(validation.message);
     return;
   }
 
-  await runScan(url);
+  await runScan(validation.url, { isExample: !rawUrl });
 });
 
-demoScan.addEventListener("click", async () => {
-  input.value = DEMO_SCAN_URL;
-  await runScan(DEMO_SCAN_URL);
+input.addEventListener("input", updateActionLabel);
+
+input.addEventListener("paste", () => {
+  setTimeout(updateActionLabel, 0);
 });
 
 verifiedDemo.addEventListener("click", async () => {
   const response = await fetch("verified-gemma-review.json");
   render(await response.json());
-  statusNode.textContent = "Loaded a saved Gemma 4 review for the public demo fixture.";
-  document.querySelector(".verdict-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  statusNode.textContent = "Saved Gemma proof loaded for the public demo fixture.";
+  scrollToResults();
 });
 
 copyContext.addEventListener("click", async () => {
@@ -47,13 +55,9 @@ copyContext.addEventListener("click", async () => {
   }, 1200);
 });
 
-async function runScan(url) {
-  const button = form.querySelector("button");
-  button.disabled = true;
-  demoScan.disabled = true;
-  verifiedDemo.disabled = true;
-  button.textContent = "Scanning";
-  statusNode.textContent = "Cloning read-only, scanning config files, redacting secrets...";
+async function runScan(url, options = {}) {
+  setScanning(true);
+  statusNode.textContent = options.isExample ? "Running the example repo scan..." : "Running live repo scan...";
 
   try {
     const response = await fetch("/api/scan", {
@@ -66,15 +70,126 @@ async function runScan(url) {
       throw new Error(payload.error || "Scan failed");
     }
     render(payload);
-    statusNode.textContent = "Fresh scan complete. Review the verdict before adding this tool.";
+    statusNode.textContent = options.isExample ? "Example scan complete." : "Fresh scan complete.";
+    setScanning(false);
+    scrollToResults();
   } catch (error) {
-    statusNode.textContent = `${error.message}. Static demo is still shown below.`;
-  } finally {
-    button.disabled = false;
-    demoScan.disabled = false;
-    verifiedDemo.disabled = false;
-    button.textContent = "Scan";
+    setScanning(false);
+    showScanFailure(error.message);
   }
+}
+
+function setScanning(isScanning) {
+  submitButton.disabled = isScanning;
+  verifiedDemo.disabled = isScanning;
+  input.disabled = isScanning;
+  submitButton.textContent = isScanning ? "Scanning" : actionLabel();
+  loader.hidden = !isScanning;
+  loader.classList.toggle("is-loading", isScanning);
+  clearInterval(loadingTimer);
+
+  if (isScanning) {
+    const stages = ["fetch", "scan", "review"];
+    let index = 0;
+    updateLoadingStage(stages[index]);
+    loadingTimer = setInterval(() => {
+      index = Math.min(index + 1, stages.length - 1);
+      updateLoadingStage(stages[index]);
+    }, 1500);
+  }
+}
+
+function updateLoadingStage(activeStage) {
+  for (const item of loader.querySelectorAll("li")) {
+    const stage = item.dataset.stage;
+    item.classList.toggle("active", stage === activeStage);
+    if (["fetch", "scan", "review"].indexOf(stage) < ["fetch", "scan", "review"].indexOf(activeStage)) {
+      item.classList.add("done");
+    } else {
+      item.classList.remove("done");
+    }
+  }
+}
+
+function actionLabel() {
+  return input.value.trim() ? "Scan now" : "Test example";
+}
+
+function updateActionLabel() {
+  submitButton.textContent = actionLabel();
+}
+
+function clearMessage() {
+  errorNode.textContent = "";
+  statusNode.classList.remove("error");
+}
+
+function showInlineError(message, options = {}) {
+  errorNode.textContent = message;
+  if (!options.keepStatus) {
+    statusNode.textContent = "";
+  }
+  input.focus();
+}
+
+function showScanFailure(message) {
+  clearRenderedReport();
+  statusNode.textContent = "Scan failed.";
+  statusNode.classList.add("error");
+  showInlineError(message, { keepStatus: true });
+}
+
+function scrollToResults() {
+  const title = document.getElementById("review-title");
+  document.querySelector(".verdict-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+  requestAnimationFrame(() => title.focus({ preventScroll: true }));
+}
+
+function validateRepoUrl(value) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return { ok: false, message: "Use a GitHub repo URL, e.g. https://github.com/org/repo." };
+  }
+  const parts = parsed.pathname.split("/").filter(Boolean);
+  if (parsed.protocol !== "https:" || parsed.hostname !== "github.com") {
+    return { ok: false, message: "Only public GitHub repo URLs work in this demo." };
+  }
+  if (parts.length < 2) {
+    return { ok: false, message: "Use the repo URL, e.g. https://github.com/org/repo." };
+  }
+  if (parts.length > 2) {
+    return { ok: false, message: "Use the repo URL, not an issue, PR, blob, or branch link." };
+  }
+  if (!/^[A-Za-z0-9_.-]+$/.test(parts[0]) || !/^[A-Za-z0-9_.-]+$/.test(parts[1])) {
+    return { ok: false, message: "That GitHub repo URL has an unsupported owner or repo name." };
+  }
+  return { ok: true, url: `https://github.com/${parts[0]}/${parts[1]}` };
+}
+
+function clearRenderedReport() {
+  const decisionCard = document.querySelector(".decision-card");
+  decisionCard.classList.remove("allow", "sandbox", "block");
+  document.getElementById("decision").textContent = "Check URL";
+  document.getElementById("decision-detail").textContent = "Scan not completed";
+  document.getElementById("risk-score").textContent = "--";
+  document.getElementById("target-name").textContent = "No scan loaded";
+  document.getElementById("review-mode").textContent = "waiting for a valid repo";
+  document.getElementById("finding-count").textContent = "0 findings";
+  document.getElementById("review-title").textContent = "Scan could not run";
+  document.getElementById("core-review-label").textContent = "Needs a repo URL";
+  document.getElementById("install-verdict").textContent = "Decision: pending";
+  document.getElementById("install-reason").textContent = "No current scan result.";
+  document.getElementById("gemma-delta").textContent = "Fix the URL or try the example scan.";
+  document.getElementById("summary").textContent = "The last result was cleared so a failed scan is not confused with a successful review.";
+  list([], "top-risks");
+  list([], "hardening-plan");
+  document.getElementById("install-context-text").textContent = "Waiting on scan.";
+  currentInstallContext = "";
+  renderMcpServers([]);
+  document.getElementById("capabilities").innerHTML = "";
+  document.getElementById("findings").innerHTML = "";
 }
 
 function list(items, id) {
@@ -147,10 +262,10 @@ function render(report) {
 
   const capabilities = document.getElementById("capabilities");
   capabilities.innerHTML = "";
-  const entries = Object.entries({ ...(report.category_counts || {}), ...(report.rule_counts || {}) }).sort((a, b) => b[1] - a[1]);
+  const entries = Object.entries({ ...(report.category_counts || {}), ...(report.rule_counts || {}) }).sort((a, b) => b[1] - a[1]).slice(0, 3);
   if (!entries.length) {
     const empty = document.createElement("div");
-    empty.className = "capability";
+    empty.className = "capability signal-low";
     empty.innerHTML = `
       <div>
         <strong>No agent-tool signals</strong>
@@ -162,11 +277,12 @@ function render(report) {
   }
   for (const [name, value] of entries) {
     const row = document.createElement("div");
-    row.className = "capability";
+    const severity = signalSeverity(name);
+    row.className = `capability signal-${severity}`;
     row.innerHTML = `
       <div>
         <strong>${label(name)}</strong>
-        <small>${capabilityCopy(name)}</small>
+        <small><span>${signalLabel(severity)}</span>${capabilityCopy(name)}</small>
       </div>
       <span class="capability-count">${value}</span>
     `;
@@ -189,6 +305,24 @@ function render(report) {
     `;
     findings.appendChild(card);
   }
+}
+
+function signalSeverity(name) {
+  if (/shell|browser|session|secret|install|container|cluster|cloud|database|broad/.test(name)) {
+    return "high";
+  }
+  if (/network|write|listener|instruction|filesystem/.test(name)) {
+    return "medium";
+  }
+  return "low";
+}
+
+function signalLabel(severity) {
+  return ({
+    high: "Block: ",
+    medium: "Review: ",
+    low: "Okay: ",
+  })[severity] || "Review: ";
 }
 
 function renderInstallContext(report, decision, review) {

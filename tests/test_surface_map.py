@@ -387,7 +387,9 @@ class SurfaceMapTests(unittest.TestCase):
         report = scan(ROOT / "examples/demo-agent-stack")
         review_report(report, allow_gemma=False)
 
+        self.assertEqual(report["report_version"], "agent-surface-map.report.v1")
         self.assertEqual(report["review_source"], "fallback")
+        self.assertEqual(report["reviewer"]["backend"], "deterministic")
         self.assertIn("summary", report["gemma_review"])
         self.assertIn("install_verdict", report["gemma_review"])
         self.assertNotIn("gemma_prompt_preview", report)

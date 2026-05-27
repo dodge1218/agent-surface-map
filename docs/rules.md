@@ -14,4 +14,6 @@ Agent Surface Map is a pre-install review tool. These checks focus on files that
 | Container/cluster control | Docker socket or Kubernetes config references appear. | Treat as host or cluster control; keep out of untrusted agent tools. |
 | Prompt override text | Repo text tries to override system/developer instructions. | Treat as untrusted data until reviewed by a human. |
 
-The public rule catalog is intentionally generic. It does not publish private bug classes, target-specific research, exploit chains, or bounty workflow details.
+The public rule catalog is intentionally generic. It does not publish private
+pattern labels, target-specific research, attack narratives, or private
+disclosure workflow details.

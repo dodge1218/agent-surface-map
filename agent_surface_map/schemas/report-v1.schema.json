@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-surface-map.local/schemas/report-v1.schema.json",
+  "title": "Agent Surface Map Report v1",
+  "type": "object",
+  "required": [
+    "report_version",
+    "generated_at",
+    "target",
+    "scanned_files",
+    "risk_score",
+    "category_counts",
+    "rule_counts",
+    "mcp_servers",
+    "structured_evidence",
+    "findings",
+    "rules",
+    "gemma_review",
+    "reviewer"
+  ],
+  "properties": {
+    "report_version": { "const": "agent-surface-map.report.v1" },
+    "generated_at": { "type": "string" },
+    "target": { "type": "string" },
+    "source_url": { "type": "string" },
+    "scanned_files": { "type": "integer", "minimum": 0 },
+    "risk_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "category_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "rule_counts": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "mcp_servers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path", "command", "args", "env_keys"],
+        "properties": {
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "client": { "type": "string" },
+          "command": { "type": ["string", "null"] },
+          "args": { "type": "array", "items": { "type": "string" } },
+          "env_keys": { "type": "array", "items": { "type": "string" } },
+          "risk_hints": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": true
+      }
+    },
+    "structured_evidence": { "type": "array", "items": { "type": "object", "additionalProperties": true } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "rules": { "type": "array", "items": { "$ref": "#/$defs/rule" } },
+    "gemma_review": { "$ref": "#/$defs/review" },
+    "review_source": { "type": "string" },
+    "reviewer": { "$ref": "#/$defs/reviewer" },
+    "gemma_error": { "type": "string" },
+    "profile": { "type": "object", "additionalProperties": true }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": ["category", "severity", "path", "line", "evidence", "recommendation"],
+      "properties": {
+        "category": { "type": "string" },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 0 },
+        "evidence": { "type": "string" },
+        "recommendation": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "rule": {
+      "type": "object",
+      "required": ["id", "category", "severity", "score", "path", "line", "evidence", "recommendation"],
+      "properties": {
+        "id": { "type": "string" },
+        "category": { "type": "string" },
+        "severity": { "enum": ["low", "medium", "high", "critical"] },
+        "score": { "type": "integer" },
+        "path": { "type": "string" },
+        "line": { "type": "integer", "minimum": 0 },
+        "evidence": { "type": "string" },
+        "recommendation": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "review": {
+      "type": "object",
+      "required": ["summary", "install_verdict", "confidence", "agent_constraints", "top_risks", "hardening_plan"],
+      "properties": {
+        "summary": { "type": "string" },
+        "install_verdict": { "enum": ["add_carefully", "sandbox_first", "do_not_add"] },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "why_gemma_changed_the_call": { "type": "string" },
+        "agent_constraints": { "type": "array", "items": { "type": "string" } },
+        "top_risks": { "type": "array", "items": { "type": "string" } },
+        "quick_wins": { "type": "array", "items": { "type": "string" } },
+        "hardening_plan": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "reviewer": {
+      "type": "object",
+      "required": ["source", "backend", "model", "mode"],
+      "properties": {
+        "source": { "type": "string" },
+        "backend": { "type": "string" },
+        "model": { "type": ["string", "null"] },
+        "mode": { "enum": ["deterministic", "model"] },
+        "error": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

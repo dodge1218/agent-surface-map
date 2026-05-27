@@ -53,4 +53,6 @@ The UI keeps the workflow direct:
 
 ## Publication Boundary
 
-The public app includes generic MCP/agent safety rules only. It does not publish private target lists, bounty workflow details, exploit chains, internal scoring, or private bug classes.
+The public app includes generic MCP/agent safety rules only. It does not publish
+private target lists, private disclosure workflow details, attack narratives,
+internal scoring, or private pattern labels.

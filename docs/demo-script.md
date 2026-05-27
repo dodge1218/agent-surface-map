@@ -12,8 +12,8 @@ Target length: 60 to 90 seconds.
 6. Click `GitHub MCP` or `Postgres MCP`.
 7. Show how the same screen handles token/database risk.
 8. Start with the default saved verified Gemma 4 review.
-9. Click `Try live demo scan` to run the hosted scanner against the public demo fixture.
-9. End with MCP workflow: coding agents can call `scan_github_tool(url)` before editing config.
+9. Click `Test example` with an empty field to run the hosted scanner against the public demo fixture.
+10. End with MCP workflow: coding agents can call `scan_github_tool(url)` before editing config.
 
 ## Voiceover
 

@@ -1,6 +1,6 @@
 ---
 title: Agent Surface Map: Gemma 4 review before you install an MCP
-published: false
+published: true
 tags: devchallenge, gemmachallenge, gemma
 ---
 
@@ -28,7 +28,7 @@ The page opens on a saved verified Gemma 4 review for this tiny public fixture:
 
 [Demo MCP fixture](https://github.com/dodge1218/agent-surface-demo-mcp)
 
-Click `Load verified Gemma 4 review` to see the saved model path. Click `Try live demo scan` to run the hosted scanner against the same fixture.
+The saved Gemma proof loads by default. Click `Test example` with an empty field to run the hosted scanner against the same fixture, or paste a simple GitHub repo URL and click `Scan now`.
 
 The live scan returns parsed MCP servers, a risk score, install constraints, and `review_source: "gemma"` when the Gemma route is available. If the provider rate-limits, the app falls back to the deterministic local review and labels that honestly. That fallback behavior is part of the product, not something hidden from the judge.
 

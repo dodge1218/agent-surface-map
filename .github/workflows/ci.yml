@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[yaml]'
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Compile check
+        run: |
+          python -m py_compile \
+            asm_cli.py \
+            reviewers.py \
+            remediation_pr_body.py \
+            remediation_apply.py \
+            remediation_approval.py \
+            remediation_renderer.py \
+            drift_watch.py \
+            runtime_telemetry.py \
+            policy.py \
+            surface_map.py \
+            server.py \
+            api/scan.py \
+            mcp_server.py \
+            agent_surface_map/http_api.py \
+            scripts/mcp_workflow_smoke.py
+
+      - name: MCP workflow smoke
+        run: python scripts/mcp_workflow_smoke.py
+
+      - name: Installed CLI smoke
+        run: |
+          asm --version
+          asm schema report >/tmp/asm-report-schema.json
+          asm api --help >/tmp/asm-api-help.txt
+          asm scan examples/demo-agent-stack --out /tmp/asm-report.json
+          asm explain /tmp/asm-report.json
+
+      - name: Create action smoke baseline
+        run: asm baseline examples/demo-agent-stack --state /tmp/asm-ci-baseline.json
+
+      - name: Composite action smoke
+        uses: ./
+        with:
+          target: examples/demo-agent-stack
+          state: /tmp/asm-ci-baseline.json
+          artifact-dir: /tmp/asm-ci-artifacts
+          github-step-summary: "true"
+          github-annotation: "true"
+          fail-on: BLOCK

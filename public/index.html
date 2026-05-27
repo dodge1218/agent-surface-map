@@ -19,16 +19,24 @@
 
       <section class="hero">
         <div class="hero-copy">
-          <span class="folio-label">Gemma 4 challenge build</span>
+          <span class="folio-label">Gemma 4 install review</span>
           <h1>Review this tool before you add it</h1>
-          <p class="lede">Paste a GitHub or MCP repo link. Get a read-only install review before the tool reaches your shell, files, browser, or secrets.</p>
+          <p class="lede">Paste a GitHub repo. See the install call before an agent touches shell, files, browser, or secrets.</p>
           <form id="scan-form" class="scan-form">
             <input id="scan-url" name="url" type="url" placeholder="https://github.com/org/mcp-server" autocomplete="off" />
-            <button type="submit">Scan</button>
+            <button id="scan-submit" type="submit">Test example</button>
           </form>
+          <p id="scan-error" class="scan-error" role="alert"></p>
+          <div id="scan-loader" class="scan-loader" hidden aria-live="polite">
+            <span class="loader-spinner" aria-hidden="true"></span>
+            <ol>
+              <li data-stage="fetch">Fetching repo</li>
+              <li data-stage="scan">Scanning config</li>
+              <li data-stage="review">Reviewing install posture</li>
+            </ol>
+          </div>
           <div class="hero-actions">
-            <button id="demo-scan" class="demo-scan" type="button">Try live demo scan</button>
-            <button id="verified-demo" class="demo-scan verified" type="button">Load verified Gemma 4 review</button>
+            <button id="verified-demo" class="demo-scan verified" type="button">Saved Gemma proof</button>
           </div>
           <p id="scan-status" class="scan-status"></p>
         </div>
@@ -66,15 +74,15 @@
       <section class="model-strip" aria-label="Why Gemma 4 matters">
         <div>
           <span class="meta-label">Why Gemma 4</span>
-          <h2>Scanner finds evidence. Gemma 4 makes the install call.</h2>
+          <h2>Evidence in. Install call out.</h2>
         </div>
-        <p>Gemma 4 reads the redacted surface map, connects combined risks, and returns the install posture and constraints your coding agent should follow.</p>
+        <p>Gemma reads the redacted map and returns the posture plus agent constraints.</p>
       </section>
 
       <section class="workflow-strip" aria-label="Developer workflow">
         <div>
           <span class="meta-label">Workflow integration</span>
-          <h2>Paste MCP repo -> Gemma reviews install risk -> copy constraints for your agent.</h2>
+          <h2>Paste repo -> review risk -> copy constraints.</h2>
         </div>
         <code>scan_github_tool(url) -> install_context -> safe agent constraints</code>
       </section>
@@ -83,34 +91,34 @@
         <div class="section-heading">
           <div>
             <span class="meta-label">What gets checked</span>
-            <h2>Install-facing signals, not a full source audit</h2>
+            <h2>Install-facing signals</h2>
           </div>
           <span class="count-pill">read-only</span>
         </div>
         <div class="checks-grid">
           <article>
             <strong>MCP config</strong>
-            <p>Parses server names, commands, args, env key names, and risk hints.</p>
+            <p>servers, commands, env keys</p>
           </article>
           <article>
             <strong>Shell access</strong>
-            <p>Flags terminal/process surfaces that need approval gates and isolation.</p>
+            <p>terminal and process paths</p>
           </article>
           <article>
             <strong>Browser sessions</strong>
-            <p>Looks for browser automation and profile reuse that could expose cookies.</p>
+            <p>automation and profile reuse</p>
           </article>
           <article>
             <strong>Filesystems</strong>
-            <p>Highlights broad local paths, filesystem MCPs, and oversized mounts.</p>
+            <p>local paths and mounts</p>
           </article>
           <article>
             <strong>Credentials</strong>
-            <p>Records secret-adjacent key names while redacting values from reports.</p>
+            <p>secret names, values redacted</p>
           </article>
           <article>
             <strong>Agent instructions</strong>
-            <p>Treats repo instruction files and prompt-override text as untrusted context.</p>
+            <p>repo-controlled prompts</p>
           </article>
         </div>
       </section>
@@ -120,7 +128,7 @@
           <div>
             <span class="meta-label">Example MCP reviews</span>
             <h2>Common MCP installs to review before adding</h2>
-            <p class="section-note">Representative templates, not safety certifications.</p>
+            <p class="section-note">Templates for comparison only.</p>
           </div>
           <span class="count-pill">8 templates</span>
         </div>
@@ -136,7 +144,7 @@
             <span class="gemma-dot"></span>
             <span id="core-review-label">Core review</span>
           </div>
-          <h2 id="review-title">Gemma 4 install verdict</h2>
+          <h2 id="review-title" tabindex="-1">Gemma 4 install verdict</h2>
           <div class="install-callout">
             <strong id="install-verdict">Install posture pending</strong>
             <small id="install-reason">Waiting on report.</small>
@@ -167,8 +175,8 @@
 
         <article class="capability-panel">
           <span class="meta-label">Why the score moved</span>
-          <h2>Risk signals found</h2>
-          <p class="panel-copy">Each signal is a permission pressure point. The count shows how often the scanner saw it in install-facing files.</p>
+          <h2>Top risk signals</h2>
+          <p class="panel-copy">The three signals that matter most right now.</p>
           <div id="capabilities" class="capabilities"></div>
         </article>
       </section>
@@ -176,8 +184,9 @@
       <section class="panel mcp-panel">
         <div class="section-heading">
           <div>
-            <span class="meta-label">Parsed config</span>
-            <h2>MCP servers detected</h2>
+            <span class="meta-label">Access</span>
+            <h2>What the tool can access</h2>
+            <p class="section-note">Commands, args, and env key names found in config.</p>
           </div>
           <span id="mcp-count" class="count-pill">0 servers</span>
         </div>
@@ -188,7 +197,8 @@
         <div class="section-heading">
           <div>
             <span class="meta-label">Evidence</span>
-            <h2>Safe workflow notes</h2>
+            <h2>Why we flagged it</h2>
+            <p class="section-note">Source snippets and the safer workflow to use.</p>
           </div>
           <span id="finding-count" class="count-pill">0 findings</span>
         </div>

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-surface-map.local/schemas/validation-result.schema.json",
+  "title": "Agent Surface Map Validation Result",
+  "type": "object",
+  "required": ["decision", "install_posture", "blockers", "required_changes", "warnings", "policy_checked"],
+  "properties": {
+    "decision": { "enum": ["pass", "needs_changes", "block"] },
+    "install_posture": { "enum": ["add_carefully", "sandbox_first", "do_not_add"] },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "required_changes": { "type": "array", "items": { "type": "string" } },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "policy_checked": { "type": "object", "additionalProperties": true }
+  },
+  "additionalProperties": true
+}

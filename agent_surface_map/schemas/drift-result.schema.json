@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-surface-map.local/schemas/drift-result.schema.json",
+  "title": "Agent Surface Map Drift Result",
+  "type": "object",
+  "required": ["action", "reasons", "diff"],
+  "properties": {
+    "action": { "enum": ["ALLOW", "REVIEW", "SANDBOX_FIRST", "BLOCK"] },
+    "reasons": { "type": "array", "items": { "type": "string" } },
+    "target": { "type": "string" },
+    "diff": {
+      "type": "object",
+      "required": ["risk_score_delta"],
+      "properties": {
+        "risk_score_delta": { "type": "integer" },
+        "added_capabilities": { "type": "array", "items": { "type": "string" } },
+        "removed_capabilities": { "type": "array", "items": { "type": "string" } },
+        "added_mcp_servers": { "type": "array", "items": { "type": "string" } },
+        "removed_mcp_servers": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "current_summary": { "type": "object", "additionalProperties": true },
+    "previous_summary": { "type": "object", "additionalProperties": true },
+    "candidate_packet": { "type": "object", "additionalProperties": true },
+    "policy": { "type": "object", "additionalProperties": true },
+    "runtime_telemetry": { "type": "object", "additionalProperties": true },
+    "baseline_checksum": { "type": "object", "additionalProperties": true },
+    "baseline_provenance": { "type": "object", "additionalProperties": true }
+  },
+  "additionalProperties": true
+}
