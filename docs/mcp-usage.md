@@ -4,6 +4,9 @@ Agent Surface Map can run as a local MCP server so a coding agent can ask for sa
 
 ## Local Config
 
+For copy-paste Claude Code, Codex, Cursor, and generic MCP client configs, see
+`docs/mcp-client-configs.md`.
+
 Example MCP client config:
 
 ```json

@@ -1,0 +1,150 @@
+name: Agent Surface Map
+description: Check coding-agent, MCP, and tool-install surface drift with Agent Surface Map.
+author: Agent Surface Map contributors
+
+inputs:
+  target:
+    description: Path to scan.
+    required: false
+    default: "."
+  state:
+    description: Baseline state JSON path.
+    required: true
+  policy:
+    description: Optional Agent Surface Map policy file.
+    required: false
+    default: ""
+  fail-on:
+    description: "Policy action that should fail the job: REVIEW, SANDBOX_FIRST, or BLOCK."
+    required: false
+    default: "BLOCK"
+  artifact-dir:
+    description: Directory for drift-result.json, candidate-packet.json, and candidate-packet.md.
+    required: false
+    default: ".agent-surface/artifacts"
+  state-sha256-file:
+    description: Optional file containing expected baseline sha256.
+    required: false
+    default: ""
+  provenance:
+    description: Optional signed baseline provenance manifest.
+    required: false
+    default: ""
+  signing-key-env:
+    description: Environment variable name containing the HMAC signing key for provenance verification.
+    required: false
+    default: ""
+  require-signing-identity:
+    description: Optional signing identity required in the provenance manifest.
+    required: false
+    default: ""
+  runtime-events:
+    description: Optional runtime telemetry JSON file.
+    required: false
+    default: ""
+  runtime-events-if-exists:
+    description: Skip runtime telemetry when runtime-events does not exist.
+    required: false
+    default: "true"
+  github-step-summary:
+    description: Append candidate packet markdown to GITHUB_STEP_SUMMARY.
+    required: false
+    default: "true"
+  github-annotation:
+    description: Emit GitHub warning/error annotations for non-ALLOW drift.
+    required: false
+    default: "true"
+  install-package:
+    description: Install this action package before running asm.
+    required: false
+    default: "true"
+
+outputs:
+  action:
+    description: "Drift action: ALLOW, REVIEW, SANDBOX_FIRST, or BLOCK."
+    value: ${{ steps.collect.outputs.action }}
+  drift-result:
+    description: Path to drift-result.json.
+    value: ${{ steps.collect.outputs.drift-result }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Agent Surface Map
+      if: ${{ inputs.install-package == 'true' }}
+      shell: bash
+      run: |
+        python3 -m pip install "${{ github.action_path }}"
+
+    - name: Check agent surface drift
+      id: check
+      shell: bash
+      env:
+        ASM_TARGET: ${{ inputs.target }}
+        ASM_STATE: ${{ inputs.state }}
+        ASM_POLICY: ${{ inputs.policy }}
+        ASM_FAIL_ON: ${{ inputs.fail-on }}
+        ASM_ARTIFACT_DIR: ${{ inputs.artifact-dir }}
+        ASM_STATE_SHA256_FILE: ${{ inputs.state-sha256-file }}
+        ASM_PROVENANCE: ${{ inputs.provenance }}
+        ASM_SIGNING_KEY_ENV: ${{ inputs.signing-key-env }}
+        ASM_REQUIRE_SIGNING_IDENTITY: ${{ inputs.require-signing-identity }}
+        ASM_RUNTIME_EVENTS: ${{ inputs.runtime-events }}
+        ASM_RUNTIME_EVENTS_IF_EXISTS: ${{ inputs.runtime-events-if-exists }}
+        ASM_GITHUB_STEP_SUMMARY: ${{ inputs.github-step-summary }}
+        ASM_GITHUB_ANNOTATION: ${{ inputs.github-annotation }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$ASM_ARTIFACT_DIR"
+
+        cmd=(asm check "$ASM_TARGET" --state "$ASM_STATE" --artifact-dir "$ASM_ARTIFACT_DIR")
+
+        if [[ -n "$ASM_POLICY" ]]; then
+          cmd+=(--policy "$ASM_POLICY")
+        fi
+        if [[ -n "$ASM_FAIL_ON" ]]; then
+          cmd+=(--fail-on "$ASM_FAIL_ON")
+        fi
+        if [[ -n "$ASM_STATE_SHA256_FILE" ]]; then
+          cmd+=(--state-sha256-file "$ASM_STATE_SHA256_FILE")
+        fi
+        if [[ -n "$ASM_PROVENANCE" ]]; then
+          cmd+=(--provenance "$ASM_PROVENANCE")
+        fi
+        if [[ -n "$ASM_SIGNING_KEY_ENV" ]]; then
+          cmd+=(--signing-key-env "$ASM_SIGNING_KEY_ENV")
+        fi
+        if [[ -n "$ASM_REQUIRE_SIGNING_IDENTITY" ]]; then
+          cmd+=(--require-signing-identity "$ASM_REQUIRE_SIGNING_IDENTITY")
+        fi
+        if [[ -n "$ASM_RUNTIME_EVENTS" ]]; then
+          cmd+=(--runtime-events "$ASM_RUNTIME_EVENTS")
+          if [[ "$ASM_RUNTIME_EVENTS_IF_EXISTS" == "true" ]]; then
+            cmd+=(--runtime-events-if-exists)
+          fi
+        fi
+        if [[ "$ASM_GITHUB_STEP_SUMMARY" == "true" ]]; then
+          cmd+=(--github-step-summary)
+        fi
+        if [[ "$ASM_GITHUB_ANNOTATION" == "true" ]]; then
+          cmd+=(--github-annotation)
+        fi
+
+        "${cmd[@]}"
+
+    - name: Collect outputs
+      id: collect
+      if: ${{ always() }}
+      shell: bash
+      env:
+        ASM_ARTIFACT_DIR: ${{ inputs.artifact-dir }}
+      run: |
+        set -euo pipefail
+        result="$ASM_ARTIFACT_DIR/drift-result.json"
+        echo "drift-result=$result" >> "$GITHUB_OUTPUT"
+        if [[ -f "$result" ]]; then
+          action="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("action", "UNKNOWN"))' "$result")"
+          echo "action=$action" >> "$GITHUB_OUTPUT"
+        else
+          echo "action=UNKNOWN" >> "$GITHUB_OUTPUT"
+        fi

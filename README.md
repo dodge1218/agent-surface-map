@@ -1,14 +1,18 @@
 # Agent Surface Map
 
-Agent Surface Map is a local-first install-risk reviewer for people building with coding agents, MCP servers, skills, plugins, browser automation, and shell tools.
+[![CI](https://github.com/dodge1218/agent-surface-map/actions/workflows/ci.yml/badge.svg)](https://github.com/dodge1218/agent-surface-map/actions/workflows/ci.yml)
 
-It inventories the files that define what an agent can see and do, then asks Gemma 4 to turn that inventory into an install posture and concrete constraints.
+Agent Surface Map is a local-first install-risk reviewer for people building
+with coding agents, MCP servers, skills, plugins, browser automation, and shell
+tools.
 
-This project is a submission candidate for the DEV Gemma 4 Challenge.
+It inventories the files that define what an agent can see and do, then returns
+a concrete install posture, evidence, and constraints before the agent gets
+more local power.
 
 ## Ten-Word Version
 
-Paste repo. Scanner maps surface. Gemma decides posture. Agent installs safer.
+Paste repo. Scanner maps surface. Agent installs with constraints.
 
 ## Why This Exists
 
@@ -27,6 +31,78 @@ Traditional scanners catch dependencies and secrets. Agent Surface Map focuses o
 
 ## Quick Start
 
+Install from GitHub:
+
+```bash
+python3 -m pip install "git+https://github.com/dodge1218/agent-surface-map.git"
+```
+
+Run the MCP server so an agent can scan before it installs tools:
+
+```bash
+asm mcp
+```
+
+Minimal MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "agent-surface-map": {
+      "command": "asm",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Ask the agent to call `scan_github_tool` or `scan_local_tool` before adding a
+new MCP server, then call `validate_install_plan` before writing the final
+client config.
+
+For local development, install in editable mode:
+
+```bash
+python3 -m pip install -e .
+```
+
+Then run a deterministic local scan:
+
+```bash
+asm scan examples/demo-agent-stack --out /tmp/asm-report.json
+```
+
+Validate a proposed MCP config against that report:
+
+```bash
+asm validate examples/demo-agent-stack/mcp.json \
+  --report /tmp/asm-report.json \
+  --fail-on block
+```
+
+Create a starter team policy:
+
+```bash
+asm init-policy --out agent-surface-policy.yml
+```
+
+Inspect the report or print schemas:
+
+```bash
+asm explain /tmp/asm-report.json
+asm schema report
+```
+
+Run the local HTTP API for editor plugins or local control planes:
+
+```bash
+asm api --host 127.0.0.1 --port 8765 --allowed-root "$PWD"
+```
+
+The CLI is local-first. It produces useful scan and validation output without a
+model provider. Add `--gemma` only when a Gemma/OpenAI-compatible provider is
+configured and you want model-backed review text.
+
 Install the optional runtime dependency used for parser-backed compose
 remediation:
 
@@ -40,6 +116,9 @@ Generate a demo report:
 ```bash
 python3 surface_map.py examples/demo-agent-stack --out public/sample-report.json
 ```
+
+The legacy script entrypoints remain available; `asm` is the productized wrapper
+around the same scanner, policy, drift, and MCP primitives.
 
 Open the UI with link scanning:
 
@@ -64,13 +143,20 @@ https://github.com/dodge1218/agent-surface-demo-mcp
 ## Process
 
 See `docs/process.md` for the full web + MCP workflow.
+See `docs/cli.md` for the local-first `asm` CLI.
+See `docs/api.md` for the local HTTP API contract.
+See `docs/report-format.md` for the versioned report contract.
+See `docs/github-action.md` for the composite GitHub Action.
+See `docs/scanner-pack-ecosystem.md` for the scanner-pack ecosystem direction.
+See `docs/release-readiness-checklist.md` before committing/publishing.
+See `docs/release-notes-v0.1.0.md` for the v0.1.0 release summary.
 See `docs/catalog/preaudit-library.md` for the public MCP example review library.
 See `docs/rules.md` for the public rule catalog.
 
 Short version:
 
 ```text
-link/path -> read-only scan -> redacted surface map -> Gemma install judgment -> agent constraints
+link/path -> read-only scan -> redacted surface map -> install posture -> agent constraints
 ```
 
 ## Example MCP Library
@@ -92,18 +178,24 @@ These are representative install profiles, not upstream safety certifications. E
 
 The Vercel deployment uses `api/scan.py` instead of `server.py`. It downloads a small GitHub zipball, extracts it to temporary storage, scans files, and returns the same JSON shape as the local server. It does not execute repository code.
 
-## Using Gemma 4
+## Reviewer Backends
 
-The scanner works without network access and writes a deterministic report. To let Gemma 4 produce the narrative risk review, configure an OpenAI-compatible endpoint:
+The scanner works without network access and writes a deterministic report. To
+let Gemma 4 or another OpenAI-compatible model produce the narrative risk
+review, configure an endpoint:
 
 ```bash
 export GEMMA_API_KEY="..."
 export GEMMA_BASE_URL="https://your-provider.example/v1"
 export GEMMA_MODEL="google/gemma-4-31b"
-python3 surface_map.py /path/to/agent/repo --out public/sample-report.json --gemma
+asm scan /path/to/agent/repo --out report.json --gemma
 ```
 
-The local server, Vercel API, and MCP server use Gemma automatically when `GEMMA_API_KEY` and `GEMMA_BASE_URL` are configured. If Gemma is not configured or the provider call fails, the report falls back to the deterministic local review and sets `review_source` to `fallback`.
+The CLI uses model review only when `--gemma` is supplied. The local server,
+Vercel API, and MCP server can use Gemma when `GEMMA_API_KEY` and
+`GEMMA_BASE_URL` are configured. If Gemma is not configured or the provider call
+fails, the report falls back to the deterministic local review and sets
+`review_source` to `fallback`.
 
 The prompt sent to Gemma contains only file paths, matched config snippets, and redacted environment variable names. Secret values are not read or sent.
 
@@ -119,20 +211,6 @@ ASM_GEMMA_REVIEW_ESTIMATED_USD=0.02
 
 For a provider-enforced spend cap, use an API key with its own provider-side credit limit. The app-level budget setting is a best-effort demo throttle for public demos.
 
-## Challenge Fit
-
-Gemma 4 is central because the hard part is not collecting files. The hard part is constrained judgment over messy developer context:
-
-- What can this agent actually do?
-- Which permissions create the highest practical risk?
-- Should it be added carefully, sandboxed first, or rejected?
-- Which constraints should the coding agent follow before touching local config?
-
-The app uses deterministic scanning for trust and Gemma 4 for install-policy judgment, prioritization, and plain-English guidance.
-
-See `docs/judging-map.md` for the build mapped directly to the challenge criteria.
-See `docs/doctrine.md` and `docs/prd.md` for the locked product doctrine and requirements.
-
 ## MCP Workflow
 
 The web app is the quick check. The MCP server is the developer-workflow integration.
@@ -141,7 +219,9 @@ The web app is the quick check. The MCP server is the developer-workflow integra
 python3 mcp_server.py
 ```
 
-See `docs/mcp-usage.md` for client config and tool schemas. See `docs/security-notes.md` for the MCP server's own safety constraints.
+See `docs/mcp-client-configs.md` for copy-paste Claude Code, Codex, Cursor,
+and generic MCP client configs. See `docs/mcp-usage.md` for tool schemas. See
+`docs/security-notes.md` for the MCP server's own safety constraints.
 
 Use it when a coding agent is about to add a new MCP server, browser tool, skill, plugin, or repo instruction pack. The agent can call `scan_github_tool` or `scan_local_tool` first, then use the returned install context as constraints before touching local config.
 
@@ -288,6 +368,16 @@ python3 remediation_apply.py examples/demo-agent-stack/mcp.json \
 edits for reviewed compose adapter operations.
 Use `remediation_pr_body.py` to generate review text from the remediation and
 approval artifacts before opening a PR.
+
+## DEV Gemma 4 Submission
+
+Agent Surface Map was originally submitted to the DEV Gemma 4 Challenge as a
+Gemma-backed install reviewer. The product now treats models as reviewer
+backends, not the foundation: deterministic scanning and policy validation must
+work locally even when no model provider is configured.
+
+See `docs/judging-map.md` for the original challenge mapping. See
+`docs/doctrine.md` and `docs/prd.md` for the product doctrine and requirements.
 
 Optional local path allowlist:
 

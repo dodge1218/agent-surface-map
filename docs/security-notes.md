@@ -51,7 +51,8 @@ The scanner includes generic public rules for common MCP/agent install risks:
 - prompt-override language
 - browser profile/session reuse
 
-These rules are intentionally generic. They do not encode private bug classes, target-specific findings, bounty methodology, or exploit chains.
+These rules are intentionally generic. They do not encode private pattern
+labels, target-specific findings, disclosure methodology, or attack narratives.
 
 See `docs/rules.md` for the public rule catalog.
 

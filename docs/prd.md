@@ -4,6 +4,10 @@
 
 Help developers decide how to install MCP servers, skills, plugins, and agent tools before those tools reach shell, browser profiles, files, or credentials.
 
+The current demo is Gemma-centered because it was built for the Gemma 4
+challenge. The product direction is local-first and model-agnostic; see
+`docs/local-first-product-prd.md`.
+
 ## Primary User
 
 A developer using a coding agent who is about to add a new tool from a GitHub repo or example config.

@@ -2,6 +2,8 @@
 
 This file tracks ideal additions that should not blur the current hackathon PRD. Additions here are product expansion candidates, not completion requirements for the original demo.
 
+For the local-first product direction, see `docs/local-first-product-prd.md`.
+
 ## V2 Thesis
 
 Move from one-shot install-risk review to continuous agentic attack-surface management.
@@ -10,7 +12,39 @@ Move from one-shot install-risk review to continuous agentic attack-surface mana
 baseline -> drift watch -> policy action -> candidate packet -> runtime telemetry -> human-approved remediation
 ```
 
+V2 should also make Agent Surface Map pack-compatible:
+
+```text
+target classifier -> scanner pack router -> agent_tool_surface packet -> policy gate -> agent handoff
+```
+
 ## V2 Requirement Candidates
+
+### Scanner Pack Ecosystem
+
+Status: public doctrine and design doc started in
+`docs/scanner-pack-ecosystem.md`.
+
+Purpose:
+
+- Treat ASM as the first scanner pack, `agent_tool_surface`.
+- Let streaming agents call ASM when they encounter MCP servers, agent tools,
+  package install surfaces, browser/shell/file access, or related config.
+- Establish a normalized scanner packet contract before adding more pack
+  families.
+- Keep public rules sanitized while allowing private learning loops to
+  contribute generalized risk shapes and false-positive filters.
+
+Desired next:
+
+- Add `schemas/scanner-packet-v1.schema.json`.
+- Add `asm scan --packet-out` or include a `scanner_packet` section in report
+  JSON.
+- Add a tiny router prototype that maps target fingerprints to
+  `agent_tool_surface`.
+- Add a public-safe rule-pack contribution guide.
+- Keep all target-specific research, attack narratives, disclosure workflow,
+  and private pattern labels out of public docs.
 
 ### Drift Watcher
 
@@ -135,4 +169,4 @@ Desired:
 - Full EDR/SIEM replacement.
 - Autonomous production remediation.
 - Malware certification.
-- Private bounty workflow exposure.
+- Private disclosure workflow exposure.
