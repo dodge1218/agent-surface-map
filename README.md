@@ -31,7 +31,36 @@ Traditional scanners catch dependencies and secrets. Agent Surface Map focuses o
 
 ## Quick Start
 
-Install the local CLI in editable mode while developing:
+Install from GitHub:
+
+```bash
+python3 -m pip install "git+https://github.com/dodge1218/agent-surface-map.git"
+```
+
+Run the MCP server so an agent can scan before it installs tools:
+
+```bash
+asm mcp
+```
+
+Minimal MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "agent-surface-map": {
+      "command": "asm",
+      "args": ["mcp"]
+    }
+  }
+}
+```
+
+Ask the agent to call `scan_github_tool` or `scan_local_tool` before adding a
+new MCP server, then call `validate_install_plan` before writing the final
+client config.
+
+For local development, install in editable mode:
 
 ```bash
 python3 -m pip install -e .
